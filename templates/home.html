@@ -1,0 +1,78 @@
+{% extends "basehome.html" %}
+
+{% block content %}
+<div class="main">
+        <div class="jumbotron firsttype">
+            <div class="container">
+                <div class="row" style="padding-top: 10px;">
+                    <div class="col-sm">
+                        <img src="{{ url_for('static', filename='user/img/screen1.png') }}" class="phone">
+                    </div>
+                    <div class="col-sm justify-content-center align-self-center">
+                        <h1 class="display-4">Selamat datang di Sirkadian</h1>
+                        <p class="lead">Jalan awalmu menuju hidup sehat</p>
+                        <a class="btn btn-outline-primary" href="#" role="button">Tunjukkan lebih banyak</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="jumbotron secondtype">
+            <div class="container">
+                <div class="row">
+                    <h1 class="display-4">Sirkadian, teman sehat barumu</h1>
+                    <p class="lead">
+                        Rasakan pengalaman baru dalam menjalani hidup sehat. Sirkadian membantumu hidup sehat dengan mudah dan holistik.
+                        Segala bagian dari hidup sehat, mulai dari makan, tidur, olahraga, bahkan bantuan mental akan kami sediakan.<br>
+                        Semua rekomendasi kami didasarkan pada rekomendasi Kementerian Kesehatan, WHO, dan jurnal-jurnal ilmiah.
+                    </p>
+                    <a class="btn btn-outline-primary" href="#" role="button">Unduh</a>
+                </div>
+            </div>
+        </div>
+        <div class="jumbotron thirdtype">
+            <div class="container">
+                <div class="row">
+                    <h1 class="display-4">Bersama Sirkadian memandang era baru kesehatan manusia</h1>
+                    <p class="lead">
+                        Sirkadian memandang kesehatan manusia adalah bagian esensial dari kehidupan yang sejahtera.<br>
+                        Oleh karena itu, Sirkadian berusaha keras untuk membantu manusia mendapatkan derajat hidup yang lebih baik.<br>
+                        Sirkadian akan memberikan rekomendasi kesehatan yang dapat dimodifikasi sesuai keinginan pengguna, sehingga mengakomodasi kehidupan yang lebih sejahtera
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="jumbotron fourthtype">
+            <div class="container">
+                <div class="row">
+                    <h1 class="display-4">Sirkadian, aplikasi kesehatan terlengkap</h1>
+                    <p class="lead">
+                        Sirkadian menyediakan rekomendasi holistik dari seluruh aspek hidupmu.<br>
+                        Membantu dari segala sisi seperti, makanan, olahraga, tidur, mental, bahkan adiksi adalah visi Sirkadian sejak awal.<br>
+                        Jadi, jangan ragu lagi, coba sekarang, rasakan hidup sehat yang mudah dan fleksibel!
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="jumbotron fifthtype">
+            <div class="container">
+                <h1 class="display-4">Unduh Sirkadian</h1>
+                <p class="lead">
+                    Sirkadian sedang dalam versi beta.<br>
+                    Masukkan email Anda untuk mendapatkan info terupdate tentang Sirkadian.
+                </p>
+                <form>
+                    <input type="email" id="email" aria-describedby="emailHelp" placeholder="Ketik alamat email">
+                    <small id="emailHelp" class="form-text" style="padding: 5px;">Sirkadian tidak akan menyebarkan informasi Anda kepada siapapun.</small>
+                    <button type="submit" class="btn btn-outline-primary">Kirim</button>
+                </form>
+            </div>
+        </div>
+        <footer class="srk-footer">
+            <p>Copyright &copy; <script>document.write(new Date().getFullYear())</script> Sirkadian Corporation.<br>
+            Segala info dalam website dan aplikasi bukanlah opini ahli, pakai dengan kewaspadaan.
+            </p>
+        </footer>
+</div>
+
+
+{% endblock %}

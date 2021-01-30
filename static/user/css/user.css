@@ -1,0 +1,162 @@
+*{
+    border-radius: 0 !important;
+}
+
+.navbar {
+    transition: all 0.4s;
+}
+
+.navbar .nav-link {
+    color: #fff;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+    color: #28DF99;
+    text-decoration: none;
+}
+
+.navbar .navbar-brand {
+    color: #fff;
+}
+
+
+/* Change navbar styling on scroll */
+.navbar.active {
+    background: #303030;
+    box-shadow: 1px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar.active .nav-link {
+    color: #fff;
+}
+
+.navbar.active .nav-link:hover,
+.navbar.active .nav-link:focus {
+    color: #28DF99;
+    text-decoration: none;
+}
+
+.navbar.active .navbar-brand {
+    color: #fff;
+}
+
+
+/* Change navbar styling on small viewports */
+@media (max-width: 991.98px) {
+    .navbar {
+        background: #303030;
+    }
+
+    .navbar .navbar-brand, .navbar .nav-link {
+        color: #fff;
+    }
+}
+
+/* Button styling */
+.btn-outline-primary {
+    background-color: transparent;
+    border-color: #fff;
+    box-shadow: none;
+    color: #fff;
+}
+
+.btn-outline-primary:hover {
+    background-color: transparent;
+    border-color: #28DF99;
+    box-shadow: none;
+    color: #28DF99;
+}
+
+/* Style home */
+body {
+    background-image: url("../img/background.jpg");
+    height: 100vh;
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: 50% 50%;
+    
+}
+
+/* screenshot styling */
+.phone{
+    height: 80%;
+    width: auto
+}
+
+/* Jumbotron Styling */
+.jumbotron{
+    /* margin-bottom: 0; */
+    background-color: transparent;
+    color: #fff;
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.jumbotron.firsttype{
+    text-align: right;
+}
+
+.jumbotron.secondtype{
+    text-align: left;
+}
+
+.jumbotron.thirdtype{
+    text-align: right;
+}
+
+.jumbotron.fourthtype{
+    text-align: left;
+}
+
+.jumbotron.fifthtype{
+    text-align: center;
+}
+
+input[type="email"] {
+    background-color : transparent;
+    color: #B6EECD;
+    border-color: #FFF;
+    border-style:solid;
+    padding: 10px;
+}
+
+input[type="email"]:focus {
+    background-color : transparent;
+    color: #B6EECD;
+}
+
+input[type="email"]::content {
+    text-align: center;
+}
+
+input[type="email"]::placeholder {
+    color: #fff;
+    text-align: center;
+}
+
+input[type="email"]:-ms-input-placeholder {
+    color: #fff;
+    text-align: center;
+}
+
+input[type="email"]::-ms-input-placeholder {
+    color: #fff;
+    text-align: center;
+}
+
+/* Footer */
+.srk-footer {
+    text-align: center;
+    color: #fff;
+    background-color: transparent;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+}
+    
+.srk-footer a {
+    color: #28DF99;
+}

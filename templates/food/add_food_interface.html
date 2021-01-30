@@ -1,0 +1,229 @@
+{% extends "baseadmin.html" %}
+
+{% block content %}
+
+<!-- EASY AUTOCOMPLETE IMPORT-->
+<!-- JS file -->
+<script src="{{ url_for('static', filename='admin/js/jquery.easy-autocomplete.min.js') }}"></script>
+
+<!-- CSS file -->
+<link rel="stylesheet" href="{{ url_for('static', filename='admin/css/easy-autocomplete.min.css') }}">
+
+<!-- Additional CSS Themes file - not required-->
+<link rel="stylesheet" href="{{ url_for('static', filename='admin/css/easy-autocomplete.themes.min.css') }}">
+
+<!-- include summernote css/js -->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
+
+<!-- Content Wrapper -->
+<div id="content-wrapper" class="d-flex flex-column">
+
+    <!-- Main Content -->
+    <div id="content">
+        
+                <!-- Topbar -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+
+                    <!-- Sidebar Toggle (Topbar) -->
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+
+                    <!-- Topbar Navbar -->
+                    <ul class="navbar-nav ml-auto">
+
+                        <!-- Nav Item - User Information -->
+                        <li class="nav-item dropdown no-arrow">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Douglas McGee</span>
+                                <img class="img-profile rounded-circle"
+                                    src="img/undraw_profile.svg">
+                            </a>
+                            <!-- Dropdown - User Information -->
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                aria-labelledby="userDropdown">
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Profile
+                                </a>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Settings
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </li>
+
+                    </ul>
+
+                </nav>
+                <!-- End of Topbar -->
+
+                <!-- Begin Page Content -->
+                <div class="container-fluid">
+                    <h2>
+                        Tambah Menu Makanan
+                    </h2>
+                    <form action="{{ url_for('add_food_interface') }}_interface" method="POST" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="col-sm">
+                                    <label for="food_name"><h5>Nama Makanan</h5></label>
+                                    <input type="text" class="form-control" id="food_name" name="food_name" placeholder="Masukkan nama makanan">
+                                    <br>
+                                    <label for="food_serving"><h5>Jumlah Porsi/Penyajian</h5></label>
+                                    <input type="text" class="form-control" id="food_serving" name="food_serving" placeholder="Berapa porsi satu resep ini?">
+                                    <br>
+                                    <label for="food_type"><h5>Tipe Makanan</h5></label>
+                                    <select class="form-control" id="food_type" name="food_type">
+                                        <option id="pokok" value="pokok">pokok</option>
+                                        <option id="lauk" value="lauk">lauk</option>
+                                        <option id="sayur" value="sayur">sayur</option>
+                                        <option id="minuman" value="minuman">minuman</option>
+                                        <option id="snack" value="snack">snack</option>
+                                    </select>
+                                    <br>
+                                    <label for="food_difficulty"><h5>Tingkat Kesulitan</h5></label>
+                                    <select class="form-control" id="food_difficulty" name="food_difficulty">
+                                        <option id="easy" value="easy">Mudah</option>
+                                        <option id="medium" value="medium">Sedang</option>
+                                        <option id="hard" value="hard">Sulit</option>
+                                    </select>
+                                    <br>
+                                    <label for="food_ingredient_instructions"><h5>Instruksi Bahan Lengkap</h5></label>
+                                    <textarea id="food_ingredient_instructions" name="food_ingredient_instructions"></textarea>
+                                    <br>
+                                    <label for="food_instructions"><h5>Instruksi Makanan</h5></label>
+                                    <textarea id="food_instructions" name="food_instructions"></textarea>
+                                    <br>
+                                    <label for="tags"><h5>Tags</h5></label>
+                                    <input type="text" class="form-control" id="tags" name="tags" placeholder="Masukkan tag">
+                                    <br>
+                                    <label for="food_image"><h5>Foto Makanan</h5></label><br>
+                                    <input type="file" accept=".gif,.jpg,.jpeg,.png" id="food_image" name="food_image"></input>
+                                
+                                </div>
+                                
+                            
+                                <div class="col-sm">
+                                    <div id="food">
+                            <label><h5>Bahan Makanan </h5></label><button type="button" class="btn btn-danger btn-circle" id="add_ingredient_btn">+</button>
+                            <div class="form-group" id="ingredient_1">
+                                <label><b>Bahan 1</b></label><br>
+                                <div class="row">
+                                    <div class="col-sm">
+                                        <label for="name">Nama Bahan</label>
+                                        <input type="text" class="form-control food_ingredient_name" id="food_ingredient_name_1" name="ingredient[1][namabahan]" placeholder="Masukkan nama bahan">    
+                                    </div>
+                                    <div class="col-sm">
+                                        <label for="name">Jumlah Bahan</label>
+                                        <input type="text" class="form-control" id="food_ingredient_angka_1"  name="ingredient[1][angkabahan]" placeholder="Masukkan jumlah bahan">
+                                    </div>
+                                    
+                                    <div class="col-sm">
+                                        <label for="name">Satuan Bahan</label>
+                                        <select class="form-control" id="food_ingredient_satuan_1" name="ingredient[1][satuanbahan]">
+                                            <option id="gram" value="gram">gram</option>
+                                            <option id="butir" value="butir">butir</option>
+                                            <option id="siung" value="siung">siung</option>
+                                            <option id="sdm" value="sdm">sendok makan</option>
+                                            <option id="sdt" value="sdt">sendok teh</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Submit</button>
+                        
+                    </form>
+                </div>
+                <!-- /.container-fluid -->
+
+            </div>
+            <!-- End of Main Content -->
+            <footer class="sticky-footer bg-white">
+                <div class="container my-auto">
+                    <div class="copyright text-center my-auto">
+                        <span>Copyright &copy; SIRKADIAN 2020</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
+        <!-- End of Content Wrapper -->
+
+    </div>
+    <!-- End of Page Wrapper -->
+<script>
+    var ingredient_num = 1;
+    var options = {
+        
+        url: "/admin_only/food/get_all_food_ingredients_api",
+
+        getValue: "name",
+
+        list: {
+            match: {
+                enabled: true
+            }
+        }
+    };
+    // var options2 = {
+    //     url: "/admin_only/get_tags",
+
+    //     getValue: "tag",
+
+    //     list: {
+    //         match: {
+    //             enabled: true
+    //         }
+    //     }
+    // };
+    $(document).ready(function(){
+        $("#food_ingredient_name_" + ingredient_num + "").easyAutocomplete(options);
+        $('#food_instructions').summernote();
+        $('#food_ingredient_instructions').summernote();
+    });
+    
+    $("#add_ingredient_btn").click(function () {
+        ingredient_num = ingredient_num + 1;
+        $("#food").append(
+            `<div class="form-group" id="ingredient_${ingredient_num}">
+                <label><b>Bahan ${ingredient_num}</b></label><br>
+                <div class="row">
+                    
+                    <div class="col-sm">
+                        <label for="name">Nama Bahan</label>
+                        <input type="text" class="form-control food_ingredient_name" id="food_ingredient_name_${ingredient_num}" name="ingredient[${ingredient_num}][namabahan]" placeholder="Masukkan nama bahan">    
+                    </div>
+                    <div class="col-sm">
+                        <label for="name">Jumlah Bahan</label>
+                        <input type="text" class="form-control" id="food_ingredient_angka_${ingredient_num}" name="ingredient[${ingredient_num}][angkabahan]" placeholder="Masukkan jumlah bahan">
+                    </div>
+                    
+                    <div class="col-sm">
+                        <label for="name">Satuan Bahan</label>
+                        <select class="form-control" id="food_ingredient_satuan_${ingredient_num}" name="ingredient[${ingredient_num}][satuanbahan]">
+                            <option id="gram" value="gram">gram</option>
+                            <option id="butir" value="butir">butir</option>
+                            <option id="siung" value="siung">siung</option>
+                            <option id="sdm" value="sdm">sendok makan</option>
+                            <option id="sdt" value="sdt">sendok teh</option>
+                        </select>
+                    </div>
+                </div>
+            </div>`
+        );
+        $("#food_ingredient_name_" + ingredient_num + "").easyAutocomplete(options)
+    })
+
+</script>
+{% endblock %}
