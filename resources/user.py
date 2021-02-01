@@ -1,5 +1,5 @@
 from flask import request
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, Api
 from werkzeug.security import safe_str_cmp, generate_password_hash, check_password_hash
 from flask_jwt_extended import (
     create_access_token,
@@ -9,6 +9,8 @@ from flask_jwt_extended import (
     jwt_required,
     get_raw_jwt
 )
+from db import db
+from mail import mail
 from models.user import UserModel
 from models.user_history import (
     UserLoginHistoryModel
@@ -27,46 +29,34 @@ class UserRegister(Resource):
         if UserModel.find_by_username(data['username']):
             return {"message": "Username taken"}, 400
 
-        d, m, y = data['dob'].split('-') # dd-mm-yyyy
-        dob_to_input = datetime.datetime(int(y), int(m), int(d))
-
-        try:
-            if data['gender'] == 'male':
-                gender_to_input = user_gender.MALE
-            elif data['gender'] == 'female':
-                gender_to_input = user_gender.FEMALE
-        except Exception as e:
-            return {"message": e}, 200
-            
-        try:
-            if data['lang'] == 'eng':
-                lang_to_input = user_lang.ENG
-            elif data['lang'] == 'idn':
-                lang_to_input = user_lang.IDN
-        except Exception as e:
-            return {"message": e}, 200
-
         try:
             if data['password']:
-                password_to_input = generate_password_hash(data['password'])
+                password_to_input = generate_password_hash(data['password'], 'sha256')
         except Exception as e:
             return {"message": e}, 200
 
         data_to_input = UserModel(
             username=data['username'],
             password=password_to_input,
-            dob=dob_to_input,
             email=data['email'],
-            gender=gender_to_input,
-            lang=lang_to_input,
-            ip_address=request.environ.get('HTTP_X_REAL_IP', request.remote_addr),
+            ip_address=request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
         )
 
         data_to_input.save_to_db()
 
+        randint = randint(100000, 999999)
+        code = generate_password_hash(randint, 'sha256')
+        data_to_input_verification = UserVerificationModel(
+            user_id = UserModel.find_by_username(data['username']).with_entities(UserModel.id),
+            code = code,
+            purpose = 'register',
+            ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+        )
+
         return {
             "message": "Success!",
             "username": data['username'],
+            "verification_code": randint,
             "activated": 0
         }, 201
 
@@ -101,10 +91,11 @@ class UserLogin(Resource):
             )
             history_to_input.save_to_db()
             return {
+                'message': 'Success',
                 'user_id': user.id,
                 'username': data['username'],
                 'email': user.email,
-                'token': token,
+                'token': token
             }, 200
         return {'message': 'Invalid credentials'}, 401
 
@@ -122,36 +113,176 @@ class TokenRefresh(Resource):
         new_token = create_access_token(identity=current_user, fresh=False)
         return {'access_token': new_token}, 200
 
-# class UserActivation:
-# ambil kode dari input json
-# cek di database
-# set activated=True atau False jika no match
+class UserInitialSetup(Resource):
+    @jwt_required
+    def post(cls):
+        data = request.get_json(force=True)
+        user = UserModel.find_by_id(data['id'])
 
-# class UserInitialSetup:
-# cek di database ada user id atau tidak
-# cek di db activated=True
-# get json
-# set to new var json[ttl], json[gender], json[lang], json[tb], json[bb], json[tingkat keaktifan], json[preferensi olga], json[veget], json[maintain_weight]
-# update db where user_id = user.id values ttl, gender, lang
-# insert user_health_history values user_Id, tb, bb, tingkat keaktifan, preferensi olga, veget, maintain_weight
-# insert user_allergy_history values user_ID, allergy (satu entry per row)
-# insert user_disease_history values user_ID, disease (satu entry per row)
-# insert user_addiction_history values user_ID, addiction (satu entry per row)
-# DELETE data yg dimasukin kesini dari class UserRegister
+        if user['id']:
+            if user['activated'] == True:
+                d, m, y = data['dob'].split('-') # dd-mm-yyyy
+                user.dob = datetime.datetime(int(y), int(m), int(d))
 
-#class UserForgotPasswordInit:
-# if POST:
-# if email is in db, get user id, make random number 6 digits, insert user_id, code, created_at to table user_forgot_password
-# hash code
-# send email with hashed code
+                try:
+                    if data['gender'] == 'male':
+                        user.gender = 'male'
+                    elif data['gender'] == 'female':
+                        user.gender = 'female'
+                except Exception as e:
+                    return {"message": e}, 200
+                    
+                try:
+                    if data['lang'] == 'eng':
+                        user.lang = user_lang.ENG
+                    elif data['lang'] == 'idn':
+                        user.lang = user_lang.IDN
+                except Exception as e:
+                    return {"message": e}, 200
+                
+                data_to_input_health = UserHealthHistoryModel(
+                    height = data['height'],
+                    weight = data['weight'],
+                    activity_level = data['activity_level'],
+                    sport_difficulty = data['sport_difficulty'],
+                    vegan = data['vegan'],
+                    maintain_weight = data['maintain_weight']
+                )
+                
+                allergy_dict = []
+                data_to_input_allergy = UserAllergyHistoryModel(
+                    user_id = user.id,
+                    ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                )
+                for item in allergy_dict:
+                    data_to_input.allergy.append(AllergyModel.find_by_id(item))
+                
+                disease_dict = []
+                data_to_input_disease = UserDiseaseHistoryModel(
+                    user_id = user.id,
+                    ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                )
+                for item in disease_dict:
+                    data_to_input_disease.append(DiseaseModel.find_by_id(item))
 
-#class UserForgotPasswordVerify:
-# if request = sirkadian.com/forgot_password?id=30&code=hashedcode
-# if POST:
-# get user id, unhash code posted, check if == unhashed code user_forgot_password where user_id
+                addiction_dict = []
+                data_to_input_addiction = UserAddictionHistoryModel(
+                    user_id = user.id,
+                    ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                )
+                for item in addiction_dict:
+                    data_to_input_addiction.append(AddictionModel.find_by_id(item))
 
-# class UserChangePassword:
-# check if last entry of user id in user_forgot_password table < 1 jam
-# UserModel.find by id, make new model  with new password, update entry at user table
-# return success message
+                user.commit_to_db()
+                data_to_input_health.save_to_db()
+                data_to_input_allergy.save_to_db()
+                data_to_input_disease.save_to_db()
+                data_to_input_addiction.save_to_db()
 
+            elif user['activated'] == False:
+                return jsonify({
+                    'message': 'Please activate first!'
+                })
+        elif not user['id']:
+            return jsonify({
+                'message': 'No user id found!'
+            })
+        else:
+            return jsonify({
+                'message': 'Server error'
+            })
+
+class UserActivation(Resource):
+    @classmethod
+    def post(cls):
+        # ?id=....&code=.....
+        _id = request.args.get('id')
+        code = request.args.get('code')
+
+        verification = UserVerificationModel.find_by_user_id(_id)
+        if verification:
+            if check_password_hash(verification.code, code) == True:
+                user = UserModel.find_by_id(_id)
+                user.activated = 1
+                user.commit_to_db()
+
+                return jsonify({
+                    'message': 'Success! Now you may login.'
+                })
+            elif check_password_hash(verification.code, code) == False:
+                return jsonify({
+                    'message': 'Wrong verification code!'
+                })
+        elif not verification:
+            return jsonify({
+                'message': 'No user id found'
+            })
+        else:
+            return jsonify({
+                'message': 'Server error..'
+            })
+
+class UserForgotPasswordInit(Resource):
+    @classmethod
+    def post(cls):
+        data = request.get_json(force=True) #{ 'identity': 'aurelius@vito' or 'auvito' }
+        user = UserModel.find_by_email(data['identity']) or UserModel.find_by_username(data['identity'])
+        if user:
+            randint = randint(100000, 999999)
+            code = generate_password_hash(randint, 'sha256')
+            data_to_input_verification = UserVerificationModel(
+                user_id = UserModel.find_by_username(data['username']).with_entities(UserModel.id),
+                code = code,
+                purpose = 'forgotpass',
+                ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+            )
+            data_to_input_verification.save_to_db()
+
+            msg = Message('Sirkadian Lupa Password', sender = 'sirkadiancorporation@gmail.com', recipients = [user.email])
+            msg.html = "<h3>Lupa Password Sirkadian</h3><br><p>Klik link <a href='sirkadian.com/forgot_password?id=" + user.id + "&code=" + randint + "'>ini untuk mengatur ulang password Anda.</a><br><p>Abaikan pesan ini jika tidak merasa lupa password</p><br></p>Terima kasih</p><br><p>Regards, Sirkadian</p>"
+            mail.send(msg)
+
+            return jsonify({
+                'message': 'Success! Silahkan cek email Anda'
+            })
+        else:
+            return jsonify({
+                'message': 'User tidak ditemukan'
+            })
+
+class UserForgotPasswordVerify(Resource):
+    @classmethod
+    def get(cls):
+        _id = request.args.get('id')
+        code = request.args.get('code')
+
+        verification = UserVerificationModel.find_by_user_id(_id)
+
+        if user_forgot:
+            if check_password_hash(verification.code, code) == True:
+                difference_time = datetime.now() -  verification.created_at
+                if difference_time.total_seconds() <= 21600:
+                    session['messages'] = 'pass'
+                    return redirect(flask.url_for('change_password_process'), session['messages'], session['user_id'])
+                else:
+                    session['messages'] = 'Code expired'
+                    return redirect(flask.url_for('change_password'), session['messages'])
+            else:
+                session['messages'] = 'Wrong verification code!'
+                return redirect(flask.url_for('change_password'), session['messages'])
+        elif not user_forgot:
+            session['messages'] = 'Verification code not found!'
+            return redirect(flask.url_for('change_password'), session['messages'])
+
+class UserChangePassword(Resource):
+    @classmethod
+    def post(cls):
+        new_password = request.form['new_password']
+        new_password_confirm = request.form['new_password_confirm']
+
+        _id = session[['user_id']]
+        user = UserModel.find_by_id(_id)
+        user.password = generate_password_hash(data['new_password'], 'sha256')
+        user.commit_to_db()
+
+        return redirect(flask.url_for('change_password'), messages={'message': 'Success'})

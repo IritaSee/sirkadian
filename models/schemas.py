@@ -4,13 +4,18 @@ from marshmallow_enum import EnumField
 import enum
 from db import db
 from ma import ma
+from marshmallow import fields
 from models.user import UserModel
 from models.enum import (
     FoodType
 )
 from models.food import (
     FoodModel,
-    FoodIngredientsModel
+    FoodIngredientsModel,
+    FoodAnalyticsModel
+)
+from models.user_history import (
+    UserFoodHistoryModel
 )
 from models.tags import (
     TagsModel
@@ -31,8 +36,8 @@ class FoodSchema(ma.SQLAlchemyAutoSchema):
 
 class FoodAnalyticsSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
-        model = FoodAnalyticsSchema
-    food = ma.Nested('FoodSchema', only=('id', 'name'), many=True)
+        model = FoodAnalyticsModel
+    food = ma.Nested('FoodSchema', only=('id', 'name'))
 
 class UserFoodHistorySchema(ma.SQLAlchemyAutoSchema):
     class Meta:

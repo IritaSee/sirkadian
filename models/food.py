@@ -1,6 +1,7 @@
 from db import db
 from models.assoc import (
-    food_ingredients_assoc
+    food_ingredients_assoc,
+    trending_food_assoc
 )
 import json
 
@@ -9,6 +10,7 @@ class FoodIngredientsModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     name = db.Column('name', db.String(80), nullable=False)
+    # recipe = db.relationship('FoodRecipeModel', secondary=food_recipe_ingredients_assoc, backref=db.backref('food_user_recipe'), lazy=True)
     calorie = db.Column('calorie', db.Float) # kal
     protein = db.Column('protein', db.Float) # gram
     fat  = db.Column('fat', db.Float) # gram
@@ -102,9 +104,9 @@ class FoodModel(db.Model):
         'FoodIngredientsModel',
         secondary=food_ingredients_assoc,
         backref="foods",
-        lazy='dynamic'
+        lazy='joined'
     )
-    food_ingredient_instructions = db.Column('food_ingredient_instructions', db.Text)
+    food_ingredients_info = db.Column('food_ingredients_info', db.Text)
     food_instructions = db.Column('food_instructions', db.Text)
     duration = db.Column('duration', db.Integer) #durasi memasak, dihitung dlm detik
     serving = db.Column('serving', db.Integer) # integer, berapa porsi
@@ -188,16 +190,48 @@ class FoodModel(db.Model):
     def get_nutrients(cls, _id):
         pass
 
+class FoodRecipeIngredientsModel(db.Model):
+    __tablename__ = 'food_recipe'
+
+    id = db.Column('id', db.Integer, primary_key=True)
+    food_id = db.Column(db.Integer, db.ForeignKey('food.id'), nullable=False)
+    food_ingredients_id = db.Column(db.Integer, db.ForeignKey('food_ingredients.id'), nullable=False) #db.relationship('FoodIngredientsModel', secondary=food_recipe_ingredients_assoc, backref=db.backref('food_user_recipe_ingredients'), lazy=True)
+    ingredients_amt = db.Column('ingredients_amt', db.Integer())
+    ingredients_unit = db.Column('ingredients_unit', db.String(50))
+    ingredients_info = db.Column('ingredients_info', db.String(100))
+
+    def json(self):
+        return {
+            'id': self.id,
+            'food_id': self.food_id,
+            'food_ingredients_id' : self.food_ingredients_id,
+            'ingredients_amt': self.ingredients_amt,
+            'ingredients_unit': self.ingredients_unit,
+            'ingredients_info' : self.ingredients_info
+        }
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_from_db(self):
+        db.session.delete(self)
+        db.session.commit()
+    
+    @classmethod
+    def find_by_id(cls, _id):
+        return cls.query.filter_by(id=_id).first()
+
+    @classmethod
+    def find_all(cls):
+        return cls.query.all()
+
 class FoodAnalyticsModel(db.Model):
     __tablename__ = 'analytics_food'
 
     id = db.Column('id', db.Integer, primary_key=True)
-    food_id = db.relationship(
-        'FoodModel',
-        secondary=trending_food_assoc,
-        backref="foods",
-        lazy="dynamic"
-    )
+    food_id = db.Column('food', db.Integer, db.ForeignKey('food.id'))
+    food = db.relationship('FoodModel')
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now(), nullable=False)
     

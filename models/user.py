@@ -15,8 +15,6 @@ class UserModel(db.Model):
     email = db.Column('email', db.String(150), unique=True)
     gender = db.Column('gender', db.String(5))
     lang = db.Column('lang', db.Enum(user_lang))
-    login_retry = db.Column('login_retry', db.Integer, default=0)
-    last_retry = db.Column('last_retry', db.TIMESTAMP, server_default=db.func.now(), onupdate=db.func.now())
     activated = db.Column('activated', db.Boolean, default=False)
     ip_address = db.Column('ip_address', db.String(18))
     is_admin = db.Column('is_admin', db.Boolean, default=False)
@@ -63,6 +61,9 @@ class UserModel(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    def commit_to_db(self):
+        db.session.commit
+
     @classmethod
     def find_by_username(cls, username):
         return cls.query.filter_by(username=username).first()
@@ -75,3 +76,41 @@ class UserModel(db.Model):
     def find_by_email(cls, email):
         return cls.query.filter_by(email=email).first()
 
+class UserVerificationModel(db.Model):
+    __tablename__ = 'users_verification'
+    
+    id = db.Column('id', db.Integer, primary_key=True)
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
+    code = db.Column('code', db.String(100), nullable=False)
+    purpose = db.Column('purpose', db.String(100), nullable=False) # register, forgotpass
+    ip_address = db.Column('ip_address', db.String(18))
+    created_at = db.Column('created_at', db.DateTime, default=db.func.now(), nullable=False)
+
+    def __init__(
+            self,
+            user_id,
+            code,
+            ip_address
+        ):
+        self.user_id = user_id
+        self.code = code
+        self.ip_address = ip_address
+
+    def json(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'code': self.code
+        }
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_from_db(self):
+        db.session.delete(self)
+        db.session.commit()
+    
+    @classmethod
+    def find_by_user_id(cls, _id):
+        return cls.query.filter_by(user_id=_id).first()

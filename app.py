@@ -7,7 +7,7 @@ from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from db import db
 
-from resources.user import UserRegister, User, UserLogin, UserLogout, TokenRefresh
+from resources.user import *
 from resources.food import *
 from resources.tags import *
 
@@ -46,26 +46,36 @@ def indexgeneral():
 def indexadmin():
     return render_template('baseadmin.html')
 
-@app.route('/admin_only/food/add_food', methods=['POST','GET'])
-def add_food_interface():
-    return render_template('food/add_food_interface.html')
-
 # resource related to tagging
 api.add_resource(AddTag, '/admin_only/add_tag')
 api.add_resource(GetAllTagsAPI, '/admin_only/get_tags')
 
-# resource related to user
+# related to user
+@app.route('/forgot_password', methods = ['GET'], endpoint='change_password')
+def change_password():
+    return render_template('user/change_password.html')
+
 api.add_resource(UserRegister, '/user/register')
 api.add_resource(User, '/user/<int:user_id>')
 api.add_resource(UserLogin, '/user/login')
 api.add_resource(UserLogout, '/user/logout')
 api.add_resource(TokenRefresh, '/user/refresh')
+api.add_resource(UserForgotPasswordInit, '/user/forgot_password_init')
+api.add_resource(UserForgotPasswordVerify, '/user/forgot_password_verify')
+api.add_resource(UserChangePassword, '/user/change_password_process', endpoint='change_password_process')
 
 # resource related to food
-api.add_resource(AddFood, '/admin_only/food/add_food_interface')
-api.add_resource(GetAllFoodAPI, '/admin_only/food/get_all_food_api')
-api.add_resource(GetAllFoodIngredientsAPI, '/admin_only/food/get_all_food_ingredients_api')
-api.add_resource(GetFoodById, '/admin_only/food/get/<int:food_id>')
+api.add_resource(AddFood, '/api/food/add_food_interface')
+api.add_resource(GetAllFoodAPI, '/api/food/get_all_food_api')
+api.add_resource(GetAllFoodIngredientsAPI, '/api/food/get_all_food_ingredients_api')
+api.add_resource(GetFoodById, '/api/food/get/<int:food_id>')
+api.add_resource(FoodTrending, '/api/food/trending')
+api.add_resource(FoodDetail, '/api/food/detail')
+api.add_resource(FoodNutrition, '/api/food/nutrition')
+api.add_resource(FoodRecipe, '/api/food/recipe')
+api.add_resource(FoodHistory, '/api/food/history')
+# belum finish: recipe, history, necessity
+
 
 if __name__ == '__main__':
     manager.run()

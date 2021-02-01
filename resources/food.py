@@ -1,35 +1,52 @@
 import os
 import json
+import io
 from os.path import join, dirname, realpath
 from decimal import Decimal
-from flask import request, jsonify, flash, redirect, current_app
+from flask import request, jsonify, flash, redirect, current_app, render_template, make_response
 from flask_restful import Resource, reqparse
 from werkzeug.utils import secure_filename
 from blacklist import BLACKLIST
 from db import db
+from models.user import (
+    UserModel
+)
+from models.user_history import (
+    UserFoodHistoryModel
+)
 from models.food import (
     FoodModel,
-    FoodIngredientsModel
+    FoodIngredientsModel,
+    FoodRecipeIngredientsModel,
+    FoodAnalyticsModel
+)
+from models.assoc import (
+    food_ingredients_assoc
 )
 from models.enum import (
     FoodType
 )
 from models.schemas import (
     FoodSchema,
-    FoodIngredientsSchema
+    FoodIngredientsSchema,
+    FoodAnalyticsSchema,
+    UserFoodHistorySchema
 )
 from datetime import (
     date
 )
+import datetime
 
 class AddFood(Resource):
+    def get(self):
+        headers = {'Content-Type': 'text/html'}
+        return make_response(render_template('food/add_food_interface.html'),200,headers)
     def post(self):
         req = request.form.to_dict()
         food_name = req['food_name']
         food_type = req['food_type']
-        food_ingredient_instructions = req['food_ingredient_instructions']
-        food_instructions = req['food_instructions']
         food_serving = req['food_serving']
+        food_duration = req['food_duration']
         food_difficulty = req['food_difficulty']
         tags = req['tags']
 
@@ -55,6 +72,7 @@ class AddFood(Resource):
         namabahan = []
         angkabahan = []
         satuanbahan = []
+        instructions = []
         calorie = 0
         protein = 0
         fat = 0
@@ -81,14 +99,18 @@ class AddFood(Resource):
                 angkabahan.append(req[item])
             elif "[satuanbahan]" in item:
                 satuanbahan.append(req[item])
+            elif "[instruksimakanan]" in item:
+                instructions.append(req[item])
 
         jumlahbahan = len(namabahan)
         
         listbahansorted = list(zip(namabahan, angkabahan, satuanbahan))
         listbahan_processed = list(zip(namabahan, angkabahan, satuanbahan))
+        ingredient_all = []
 
         for idx, item in enumerate(listbahansorted):
             item = list(item)
+            ingredient_all.append(' '.join(item))
             if "sdm" in item[2]:
                 item[1] = float(item[1]) * 15
                 item[2] = "gram"
@@ -110,7 +132,7 @@ class AddFood(Resource):
         # ga kesimpen di list jd kalkulasi berikutnya berantakan
         # update 19-01-2021 KELARRRR
         ingredient_dict = []
-
+        
         for item in listbahan_processed:
             ingredient_db = FoodIngredientsModel.find_by_name(item[0])
             ingredient_dict.append(ingredient_db.id)
@@ -135,8 +157,9 @@ class AddFood(Resource):
         data_to_input = FoodModel(
             name = food_name,
             food_type = food_type,
-            food_ingredient_instructions = food_ingredient_instructions,
-            food_instructions = food_instructions,
+            food_ingredients_info = str(ingredient_all),
+            food_instructions = str(instructions),
+            duration = food_duration,
             serving = food_serving,
             difficulty = food_difficulty,
             calorie = calorie,
@@ -161,7 +184,8 @@ class AddFood(Resource):
         )
 
         for item in ingredient_dict:
-            data_to_input.food_ingredients.append(FoodIngredientsModel.find_by_id(item))
+            ingredient_to_db = FoodIngredientsModel.find_by_id(item)
+            data_to_input.food_ingredients.append(ingredient_to_db)
 
         data_to_input.save_to_db()
 
@@ -214,40 +238,48 @@ class FoodTrending(Resource):
         # o=1 -> date filter, o=2 -> today's trending
         option = request.args.get('o')
 
-        if option == 1:
-            year_s_url = request.args.get('ys')
-            month_s_url = request.args.get('ms')
-            day_s_url = request.args.get('ds')
-            year_e_url = request.args.get('ye')
-            month_e_url = request.args.get('me')
-            day_e_url = request.args.get('de')
+        if option == '1':
+            year_s_url = int(request.args.get('ys'))
+            month_s_url = int(request.args.get('ms'))
+            day_s_url = int(request.args.get('ds'))
+            year_e_url = int(request.args.get('ye'))
+            month_e_url = int(request.args.get('me'))
+            day_e_url = int(request.args.get('de'))
 
             start_date = date(year=year_s_url, month=month_s_url, day=day_s_url)
             end_date = date(year=year_e_url, month=month_e_url, day=day_e_url)
             
-            analytics_food = FoodAnalyticsModel.query.filter(FoodAnalyticsModelModel.created_at <= end_date).filter(FoodAnalyticsModel.created_at >= start_date)
+            analytics_food = FoodAnalyticsModel.query.filter(FoodAnalyticsModel.created_at <= end_date).filter(FoodAnalyticsModel.created_at >= start_date)
             data = FoodAnalyticsSchema(many=True).dump(analytics_food)
             return jsonify(data)
-        elif option == 2:
-            analytics_food = FoodAnalyticsModel.query.filter(FoodAnalyticsModel.created_at == date.today())
+        elif option == '2':
+            analytics_food = FoodAnalyticsModel.query.filter(FoodAnalyticsModel.created_at <= datetime.datetime.now()).all()
             data = FoodAnalyticsSchema(many=True).dump(analytics_food)
             return jsonify(data)
 
     @classmethod
     def post(cls):
-        data = request.get_json(force=True)
         option = request.args.get('o')
-
         if option == '1':
-            data_to_input = FoodAnalyticsModel(
-                'food_id': FoodModel.find_by_id(data['food_id']),
-                'ip_address': request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-            )
+            data = request.get_json(force=True)
+            if data['food_id']:
+                data_to_input = FoodAnalyticsModel(
+                    food_id = FoodModel.find_by_id(data['food_id']).id,
+                    ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                )
+                data_to_input.save_to_db()
+
+                return jsonify({'message': 'Success'})
+            else:
+                return jsonify({'message': 'Please enter food id'})
+        else:
+            return jsonify({'message': 'Enter valid option'})
 
 class FoodRecommendation(Resource):
     @classmethod
     def get(cls):
         # send json, isi nutrisi maksimal yang diinginkan
+        pass
         
 
 class FoodNecessity(Resource):
@@ -603,15 +635,15 @@ class FoodDetail(Resource):
         # o=1 -> all detail, o=2 -> half detail
         option = request.args.get('o')
 
-        if option == 1:
+        if option == '1':
             _id = request.args.get('id')
             food_detail = FoodModel.find_by_id(_id)
-            data = FoodSchema.dump(food_detail)
+            data = FoodSchema().dump(food_detail)
             return jsonify(data)
-        elif option == 2:
+        elif option == '2':
             _id = request.args.get('id')
-            food_half_detail = FoodModel.find_by_id(_id).with_entities(FoodModel.name, FoodModel.duration, FoodModel.calorie, FoodModel.food_type)
-            data = FoodSchema.dump(food_half_detail)
+            food_half_detail = FoodModel.query.filter_by(id=_id).with_entities(FoodModel.name, FoodModel.duration, FoodModel.calorie, FoodModel.food_type).first()
+            data = FoodSchema().dump(food_half_detail)
             return jsonify(data)
 
 class FoodNutrition(Resource):
@@ -619,7 +651,7 @@ class FoodNutrition(Resource):
     def get(cls):
         _id = request.args.get('id')
 
-        food_nutrition = FoodModel.find_by_id(_id).with_entities(
+        food_nutrition = FoodModel.query.filter_by(id=_id).with_entities(
             FoodModel.calorie,
             FoodModel.protein,
             FoodModel.fat,
@@ -637,57 +669,44 @@ class FoodNutrition(Resource):
             FoodModel.vit_b2,
             FoodModel.vit_b3,
             FoodModel.vit_c
-        )
+        ).first()
 
-        data = FoodSchema.dump(food_nutrition)
+        data = FoodSchema().dump(food_nutrition)
         return jsonify(data)
 
 class FoodRecipe(Resource):
     @classmethod
     def get(cls):
         _id = request.args.get('id')
+        food = FoodModel.query.filter_by(id=_id).first()
+        data = FoodSchema(exclude=[
+            'calorie',
+            'protein',
+            'fat',
+            'carbohydrate',
+            'fiber',
+            'calcium',
+            'phosphor',
+            'iron',
+            'sodium',
+            'potassium',
+            'copper',
+            'zinc',
+            'vit_a',
+            'vit_b1',
+            'vit_b2',
+            'vit_b3',
+            'vit_c',
+            'tags'
+            ]).dump(food)
 
-        recipe = FoodModel.find_by_id(_id).with_entities(
-            FoodModel.id,
-            FoodModel.name,
-            FoodModel.food_type,
-            FoodModel.food_instructions,
-            FoodModel.food_ingredients,
-            FoodModel.duration,
-            FoodModel.serving,
-            FoodModel.difficulty,
-            )
-        
-        data = FoodSchema.dump(recipe)
+        # food_ingredients_info_str = 
+        # print(food_ingredients_info_str)
+        # data['food_ingredients_info'] = json.loads(food_ingredients_info_str)
+
         return jsonify(data)
 
-class AddFoodHistory(Resource):
-    @classmethod
-    def post(cls):
-        data = request.get_json(force=True)
-
-        user_id = data['user_id']
-        food_ids = data['food_id']
-        food_type = data['food_type']
-        ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-
-        data_to_input = UserFoodHistoryModel(
-            food_type = data['food_type'],
-            ip_address = ip_address
-        )
-
-        for item in food_ids:
-            data_to_input.food.append(FoodModel.find_by_id(item))
-
-        data_to_input.user_id.append(UserModel.find_by_id(user_id))
-
-        data_to_input.save_to_db()
-
-        return jsonify({
-            'message': 'Success!'
-        })
-
-class GetFoodHistory(Resource):
+class FoodHistory(Resource):
     @classmethod
     def get(cls):
         # sirkadian.com/food_history?o=1&ys=2021&ms=01&ds=01&ye=2021&me=03&de=31
@@ -695,13 +714,13 @@ class GetFoodHistory(Resource):
             # o=3 _> ft == 1=breakfast 2=lunch 3= dinner 4=snack
         option = request.args.get('o')
 
-        if option == 1:
-            year_s_url = request.args.get('ys')
-            month_s_url = request.args.get('ms')
-            day_s_url = request.args.get('ds')
-            year_e_url = request.args.get('ye')
-            month_e_url = request.args.get('me')
-            day_e_url = request.args.get('de')
+        if option == '1':
+            year_s_url = int(request.args.get('ys'))
+            month_s_url = int(request.args.get('ms'))
+            day_s_url = int(request.args.get('ds'))
+            year_e_url = int(request.args.get('ye'))
+            month_e_url = int(request.args.get('me'))
+            day_e_url = int(request.args.get('de'))
 
             start_date = date(year=year_s_url, month=month_s_url, day=day_s_url)
             end_date = date(year=year_e_url, month=month_e_url, day=day_e_url)
@@ -709,11 +728,11 @@ class GetFoodHistory(Resource):
             history_food = UserFoodHistoryModel.query.filter(UserFoodHistoryModel.created_at <= end_date).filter(UserFoodHistoryModel.created_at >= start_date)
             data = UserFoodHistorySchema(many=True).dump(history_food)
             return jsonify(data)
-        elif option == 2:
-            history_food = UserFoodHistoryModel.query.filter(UserFoodHistoryModel.created_at == date.today())
+        elif option == '2':
+            history_food = UserFoodHistoryModel.query.filter(UserFoodHistoryModel.created_at <= date.today())
             data = UserFoodHistorySchema(many=True).dump(history_food)
             return jsonify(data)
-        elif option == 3:
+        elif option == '3':
             food_type_url = request.args.get('ft')
             if food_type_url == 1:
                 history = UserFoodHistoryModel.query.filter_by(food_type='breakfast').all()
@@ -731,3 +750,33 @@ class GetFoodHistory(Resource):
                 history = UserFoodHistoryModel.query.filter_by(food_type='snack').all()
                 data = UserFoodHistorySchema(many=True).dump(history)
                 return jsonify(data)
+
+    @classmethod
+    def post(cls):
+        data = request.get_json(force=True)
+
+        user_id = data['user_id']
+        food_ids = data['food_id']
+        food_type = data['food_type']
+        ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+
+        find_user = UserModel.query.filter_by(id=user_id).first()
+        data_to_input = UserFoodHistoryModel(
+            user_id = find_user.id,
+            food_type = data['food_type'],
+            ip_address = ip_address
+        )
+
+        total_calorie = 0
+        for item in food_ids:
+            find_food = FoodModel.find_by_id(item['id'])
+            total_calorie = total_calorie + find_food.calorie
+
+            data_to_input.food.append(find_food)
+        
+        data_to_input.total_calorie = total_calorie
+        data_to_input.save_to_db()
+        
+        return jsonify({
+            'message': 'Success!'
+        })

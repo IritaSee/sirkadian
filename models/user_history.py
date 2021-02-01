@@ -3,11 +3,10 @@ from db import db
 from models.enum import (
     activity_level,
     sport_difficulty,
-    food_time,
+    food_type,
     mood_state,
     organ_system,
-    song_mood,
-    FoodType
+    song_mood
 )
 
 from models.user import UserModel
@@ -23,7 +22,7 @@ class UserLoginHistoryModel(db.Model):
     __tablename__ = 'user_login_history'
 
     id = db.Column('id', db.Integer, primary_key=True)
-    user_id = db.Column('user_id', db.Integer, nullable=False)
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
     token = db.Column('token', db.Text)
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
@@ -48,7 +47,7 @@ class UserLoginHistoryModel(db.Model):
     
     @classmethod
     def find_by_user_id(cls, _id):
-        return cls.query.filter_by(id=_id).first()
+        return cls.query.filter_by(user_id=_id).first()
 
 class UserHealthHistoryModel(db.Model):
     __tablename__ = 'user_health_history'
@@ -80,8 +79,8 @@ class UserFoodHistoryModel(db.Model):
     __tablename__ = 'user_food_history'
 
     id = db.Column('id', db.Integer, primary_key=True)
-    user = db.relationship('UserModel', secondary=food_user_assoc, backref=db.backref('user_id_food', lazy=True))
-    food = db.relationship('FoodModel', secondary=food_user_assoc, backref=db.backref('user_food', lazy=True))
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
+    food = db.relationship('FoodModel', secondary=food_history_assoc, backref=db.backref('food_user_history'), lazy=True)
     food_type = db.Column('food_type', db.String(30))
     total_calorie = db.Column('total_calorie', db.Float)
     ip_address = db.Column('ip_address', db.String(18))
@@ -132,8 +131,9 @@ class UserDiseaseHistoryModel(db.Model):
     __tablename__ = 'user_disease_history'
 
     id = db.Column('id', db.Integer, primary_key=True)
-    user_id = db.Column('user_id', db.Integer, nullable=False)
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
     disease = db.relationship('DiseaseModel', secondary=disease_assoc, backref=db.backref('user_disease', lazy=True))
+    disease_when = db.Column('disease_when', db.Date)
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
 
@@ -185,6 +185,7 @@ class UserAllergyHistoryModel(db.Model):
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
     allergy = db.relationship('AllergyModel', secondary=allergy_assoc, backref=db.backref('user_allergy', lazy=True))
+    allergy_when = db.Column('allergy_when', db.Date)
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
 
