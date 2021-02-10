@@ -1,12 +1,6 @@
 from db import db
 from models.enum import (
-    organ_system,
-)
-from models.food import (
-    FoodModel
-)
-from models.sport import (
-    SportModel
+    organ_system
 )
 
 class DiseaseModel(db.Model):
@@ -14,9 +8,9 @@ class DiseaseModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     name = db.Column('name', db.String(80), nullable=False)
-    organ_system = db.Column('organ_system', db.Enum(organ_system))
-    food_prohibition = db.Column('food_prohibition', db.Integer, db.ForeignKey(FoodModel.id))
-    sport_prohibition = db.Column('sport_prohibition', db.Integer, db.ForeignKey(SportModel.id))
+    organ_system = db.Column('organ_system', db.String(20))
+    food_prohibition = db.Column('food_prohibition', db.Text) # "protein, fat, carbohydrate"
+    sport_prohibition = db.Column('sport_prohibition', db.Text) # "difficulty, duration"
 
     def save_to_db(self):
         db.session.add(self)
@@ -41,7 +35,3 @@ class DiseaseModel(db.Model):
     @classmethod
     def find_by_food_prohibition(cls, val):
         return cls.query.filter_by(food_prohibition=val).all()
-
-    @classmethod
-    def find_by_sport_prohibition(cls, val):
-        return cls.query.filter_by(sport_prohibition=val).all()

@@ -1,6 +1,5 @@
 from db import db
 from models.enum import (
-    organ_system,
     sport_difficulty
 )
 
@@ -10,10 +9,11 @@ class SportModel(db.Model):
     id = db.Column('id', db.Integer, primary_key=True)
     name = db.Column('name', db.String(80), nullable=False)
     cps = db.Column('cps', db.Float)
-    difficulty = db.Column('difficulty', db.Enum(sport_difficulty))
+    difficulty = db.Column('difficulty', db.String(10))
     amount = db.Column('amount', db.Integer)
     sets = db.Column('sets', db.Integer)
     duration = db.Column('duration', db.Integer) # estimated duration per set
+    image_filename = db.Column('image_filename', db.Text)
 
     def save_to_db(self):
         db.session.add(self)

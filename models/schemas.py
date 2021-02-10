@@ -12,7 +12,9 @@ from models.enum import (
 from models.food import (
     FoodModel,
     FoodIngredientsModel,
-    FoodAnalyticsModel
+    FoodAnalyticsModel,
+    FoodIngredientsInfoModel,
+    FoodInstructionsModel
 )
 from models.user_history import (
     UserFoodHistoryModel
@@ -29,10 +31,20 @@ class FoodIngredientsSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = FoodIngredientsModel
 
+class FoodIngredientsInfoSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = FoodIngredientsInfoModel
+
+class FoodInstructionsSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = FoodInstructionsModel
+
 class FoodSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = FoodModel
     food_ingredients = ma.Nested('FoodIngredientsSchema', only=('id', 'name'), many=True)
+    food_ingredients_info = ma.Nested('FoodIngredientsInfoSchema', many=True)
+    food_instructions = ma.Nested('FoodInstructionsSchema', many=True)
 
 class FoodAnalyticsSchema(ma.SQLAlchemyAutoSchema):
     class Meta:

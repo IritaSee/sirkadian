@@ -62,7 +62,7 @@
                 <span>Dashboard</span></a>
         </li>
 
-        <!-- Nav Item - Pages Collapse Menu -->
+        
         <li class="nav-item">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseOne"
                 aria-expanded="true" aria-controls="collapseOne">
@@ -75,15 +75,53 @@
                 </div>
             </div>
         </li>
-
-        <!-- Nav Item - Pages Collapse Menu -->
+        
         <li class="nav-item">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                 aria-expanded="true" aria-controls="collapseTwo">
+                <i class="fas fa-smoking"></i>
+                <span>Addiction</span>
+            </a>
+            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" href="{{ url_for('addaddiction') }}">Tambah Adiksi</a>
+                </div>
+            </div>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseThree"
+                aria-expanded="true" aria-controls="collapseThree">
+                <i class="fas fa-egg"></i>
+                <span>Allergy</span>
+            </a>
+            <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" href="{{ url_for('addallergy') }}">Tambah Alergi</a>
+                </div>
+            </div>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFour"
+                aria-expanded="true" aria-controls="collapseFour">
+                <i class="fas fa-wheelchair"></i>
+                <span>Disease</span>
+            </a>
+            <div id="collapseFour" class="collapse" aria-labelledby="headingFour" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" href="{{ url_for('adddisease') }}">Tambah Penyakit</a>
+                </div>
+            </div>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFive"
+                aria-expanded="true" aria-controls="collapseFive">
                 <i class="fas fa-utensils"></i>
                 <span>Food</span>
             </a>
-            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+            <div id="collapseFive" class="collapse" aria-labelledby="headingFive" data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
                     <a class="collapse-item" href="{{ url_for('addfood') }}">Tambah Menu Makanan</a>
                     <a class="collapse-item" href="cards.html">List of All Food</a>
@@ -91,16 +129,41 @@
             </div>
         </li>
 
-        <!-- Nav Item - Pages Collapse Menu -->
         <li class="nav-item">
-            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseThree"
-                aria-expanded="true" aria-controls="collapseThree">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSix"
+                aria-expanded="true" aria-controls="collapseSix">
+                <i class="fas fa-couch"></i>
+                <span>Meditation</span>
+            </a>
+            <div id="collapseSix" class="collapse" aria-labelledby="headingSix" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" href="{{ url_for('addmeditation') }}">Tambah Meditasi</a>
+                </div>
+            </div>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSeven"
+                aria-expanded="true" aria-controls="collapseSeven">
+                <i class="fas fa-headphones"></i>
+                <span>Song</span>
+            </a>
+            <div id="collapseSeven" class="collapse" aria-labelledby="headingSeven" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" href="{{ url_for('addsong') }}">Tambah Lagu</a>
+                </div>
+            </div>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseEight"
+                aria-expanded="true" aria-controls="collapseEight">
                 <i class="fas fa-running"></i>
                 <span>Sports</span>
             </a>
-            <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionSidebar">
+            <div id="collapseEight" class="collapse" aria-labelledby="headingEight" data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-item" href="cards.html">Add Sports</a>
+                    <a class="collapse-item" href="{{ url_for('addsport') }}">Add Sports</a>
                 </div>
             </div>
         </li>
@@ -110,9 +173,16 @@
 
     {% block content %}{% endblock %}
 
+    <footer class="sticky-footer bg-white">
+        <div class="container my-auto">
+            <div class="copyright text-center my-auto">
+                <span>Copyright &copy; SIRKADIAN 2020</span>
+            </div>
+        </div>
+    </footer>
     <!-- End of wrapper div-->
     </div>
-
+    
 </body>
 
 </html>

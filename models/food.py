@@ -1,6 +1,8 @@
 from db import db
 from models.assoc import (
     food_ingredients_assoc,
+    food_ingredients_info_assoc,
+    food_instructions_assoc,
     trending_food_assoc
 )
 import json
@@ -93,6 +95,78 @@ class FoodIngredientsModel(db.Model):
     def find_all(cls):
         return cls.query.all()
 
+class FoodIngredientsInfoModel(db.Model):
+    __tablename__ = 'food_ingredients_info'
+
+    id = db.Column('id', db.Integer, primary_key=True)
+    ingredients_info = db.Column('ingredients_info', db.Text)
+
+    def json(self):
+        return {
+            'id': self.id,
+            'ingredients_info': self.ingredients_info
+        }
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_from_db(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def find_by_name(cls, name):
+        return cls.query.filter_by(name=name).first()
+    
+    @classmethod
+    def find_by_id(cls, _id):
+        return cls.query.filter_by(id=_id).first()
+
+    @classmethod
+    def find_by_food_type(cls, val):
+        return cls.query.filter_by(food_type=val).all()
+
+    @classmethod
+    def find_all(cls):
+        return cls.query.all()
+
+class FoodInstructionsModel(db.Model):
+    __tablename__ = 'food_instructions'
+
+    id = db.Column('id', db.Integer, primary_key=True)
+    instructions = db.Column('instructions', db.Text)
+
+    def json(self):
+        return {
+            'id': self.id,
+            'instructions' : self.instructions
+        }
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_from_db(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def find_by_name(cls, name):
+        return cls.query.filter_by(name=name).first()
+    
+    @classmethod
+    def find_by_id(cls, _id):
+        return cls.query.filter_by(id=_id).first()
+
+    @classmethod
+    def find_by_food_type(cls, val):
+        return cls.query.filter_by(food_type=val).all()
+
+    @classmethod
+    def find_all(cls):
+        return cls.query.all()
+
 class FoodModel(db.Model):
     __tablename__ = 'food'
 
@@ -106,8 +180,20 @@ class FoodModel(db.Model):
         backref="foods",
         lazy='joined'
     )
-    food_ingredients_info = db.Column('food_ingredients_info', db.Text)
-    food_instructions = db.Column('food_instructions', db.Text)
+    food_ingredients_info = db.relationship(
+        'FoodIngredientsInfoModel',
+        secondary=food_ingredients_info_assoc,
+        backref="foods_ing_info",
+        lazy='joined',
+        uselist=True
+    )
+    food_instructions = db.relationship(
+        'FoodInstructionsModel',
+        secondary=food_instructions_assoc,
+        backref="foods_ins",
+        lazy='joined',
+        uselist=True
+    )
     duration = db.Column('duration', db.Integer) #durasi memasak, dihitung dlm detik
     serving = db.Column('serving', db.Integer) # integer, berapa porsi
     difficulty = db.Column('difficulty', db.String(20)) # easy, medium, hard

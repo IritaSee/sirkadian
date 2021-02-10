@@ -23,19 +23,12 @@ class UserLoginHistoryModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
-    token = db.Column('token', db.Text)
+    jti_access = db.Column(db.String(36), nullable=False)
+    jti_refresh = db.Column(db.String(36), nullable=False)
+    revoked = db.Column('revoked', db.Boolean)
+    expires = db.Column(db.DateTime, nullable=False)
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
-
-    def __init__(
-            self,
-            user_id,
-            token,
-            ip_address
-        ):
-        self.user_id = user_id
-        self.token = token
-        self.ip_address = ip_address
 
     def save_to_db(self):
         db.session.add(self)
@@ -56,10 +49,10 @@ class UserHealthHistoryModel(db.Model):
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
     height = db.Column('height', db.Float) # cm
     weight = db.Column('weight', db.Float) # kg
-    activity_level = db.Column('activity_level', db.String(15))
+    activity_level = db.Column('activity_level', db.String(10)) # sedentary, low, medium, high
     vegan = db.Column('vegan', db.Boolean)
     maintain_weight = db.Column('maintain_weight', db.Integer) # 0=maintain, 1= lose slow, 2= lose medium, 3= lose fast, 4=gain slow, 5=gain medium, 6=gain fast
-    sport_difficulty = db.Column('sport_difficulty', db.Enum(sport_difficulty))
+    sport_difficulty = db.Column('sport_difficulty', db.String(8)) # easy, medium, hard
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
 
@@ -80,7 +73,12 @@ class UserFoodHistoryModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
-    food = db.relationship('FoodModel', secondary=food_history_assoc, backref=db.backref('food_user_history'), lazy=True)
+    food = db.relationship(
+        'FoodModel',
+        secondary=food_history_assoc,
+        backref='food_user_history',
+        lazy='joined'
+    )
     food_type = db.Column('food_type', db.String(30))
     total_calorie = db.Column('total_calorie', db.Float)
     ip_address = db.Column('ip_address', db.String(18))
@@ -107,7 +105,12 @@ class UserSportHistoryModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
-    sport = db.relationship('SportModel', secondary=sport_assoc, backref=db.backref('user_sport', lazy=True))
+    sport = db.relationship(
+        'SportModel',
+        secondary=sport_history_assoc,
+        backref='user_sport',
+        lazy='joined'
+    )
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
 
@@ -132,7 +135,12 @@ class UserDiseaseHistoryModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
-    disease = db.relationship('DiseaseModel', secondary=disease_assoc, backref=db.backref('user_disease', lazy=True))
+    disease = db.relationship(
+        'DiseaseModel',
+        secondary=disease_history_assoc,
+        backref='user_disease',
+        lazy='joined'
+    )
     disease_when = db.Column('disease_when', db.Date)
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
@@ -158,7 +166,12 @@ class UserAddictionHistoryModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
-    addiction = db.relationship('AddictionModel', secondary=addiction_assoc, backref=db.backref('user_addiction', lazy=True))
+    addiction = db.relationship(
+        'AddictionModel',
+        secondary=addiction_history_assoc,
+        backref='user_addiction',
+        lazy='joined'
+    )
     addiction_when = db.Column('addiction_when', db.Date)
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
@@ -184,7 +197,12 @@ class UserAllergyHistoryModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
-    allergy = db.relationship('AllergyModel', secondary=allergy_assoc, backref=db.backref('user_allergy', lazy=True))
+    allergy = db.relationship(
+        'AllergyModel',
+        secondary=allergy_history_assoc,
+        backref='user_allergy',
+        lazy='joined'
+    )
     allergy_when = db.Column('allergy_when', db.Date)
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
@@ -254,7 +272,12 @@ class UserMeditationHistoryModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
-    meditation = db.relationship('MeditationModel', secondary=meditation_assoc, backref=db.backref('user_meditation', lazy=True))
+    meditation = db.relationship(
+        'MeditationModel',
+        secondary=meditation_history_assoc,
+        backref='user_meditation',
+        lazy='joined'
+    )
     meditation_when = db.Column('meditation_when', db.DateTime, default=db.func.now())
     duration = db.Column('duration', db.Integer) #define duration as seconds
     ip_address = db.Column('ip_address', db.String(18))
@@ -277,7 +300,12 @@ class UserSongHistoryModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
-    song = db.relationship('SongModel', secondary=song_assoc, backref=db.backref('user_song', lazy=True))
+    song = db.relationship(
+        'SongModel',
+        secondary=song_history_assoc,
+        backref='user_song',
+        lazy=True
+    )
     song_when = db.Column('song_when', db.DateTime, default=db.func.now())
     duration = db.Column('duration', db.Integer) #define duration as seconds
     ip_address = db.Column('ip_address', db.String(18))

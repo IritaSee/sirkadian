@@ -13,32 +13,12 @@ class UserModel(db.Model):
     password = db.Column('password', db.Text)
     dob = db.Column('dob', db.Date)
     email = db.Column('email', db.String(150), unique=True)
-    gender = db.Column('gender', db.String(5))
-    lang = db.Column('lang', db.Enum(user_lang))
+    gender = db.Column('gender', db.String(10))
+    lang = db.Column('lang', db.String(5))
     activated = db.Column('activated', db.Boolean, default=False)
     ip_address = db.Column('ip_address', db.String(18))
     is_admin = db.Column('is_admin', db.Boolean, default=False)
     created_at = db.Column('created_at', db.DateTime, default=db.func.now(), nullable=False)
-
-    def __init__(
-            self,
-            username,
-            password,
-            dob,
-            email,
-            gender,
-            lang,
-            activated,
-            ip_address
-        ):
-        self.username = username
-        self.password = password
-        self.dob = dob
-        self.email = email
-        self.gender = gender
-        self.lang = lang
-        self.activated = activated
-        self.ip_address = ip_address
 
     def json(self):
         return {
@@ -62,7 +42,7 @@ class UserModel(db.Model):
         db.session.commit()
 
     def commit_to_db(self):
-        db.session.commit
+        db.session.commit()
 
     @classmethod
     def find_by_username(cls, username):
@@ -83,18 +63,9 @@ class UserVerificationModel(db.Model):
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
     code = db.Column('code', db.String(100), nullable=False)
     purpose = db.Column('purpose', db.String(100), nullable=False) # register, forgotpass
+    used = db.Column('used', db.Boolean, default=False)
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now(), nullable=False)
-
-    def __init__(
-            self,
-            user_id,
-            code,
-            ip_address
-        ):
-        self.user_id = user_id
-        self.code = code
-        self.ip_address = ip_address
 
     def json(self):
         return {
@@ -109,6 +80,57 @@ class UserVerificationModel(db.Model):
 
     def delete_from_db(self):
         db.session.delete(self)
+        db.session.commit()
+
+    def commit_to_db(self):
+        db.session.commit()
+    
+    @classmethod
+    def find_by_user_id(cls, _id):
+        return cls.query.filter_by(user_id=_id).first()
+
+class UserNecessityModel(db.Model):
+    __tablename__ = 'user_necessity'
+    
+    id = db.Column('id', db.Integer, primary_key=True)
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
+    calorie_min = db.Column('calorie_min', db.Float, nullable=False)
+    calorie_max = db.Column('calorie_max', db.Float, nullable=False)
+    protein = db.Column('protein', db.Float, nullable=False)
+    fat = db.Column('fat', db.Float, nullable=False)
+    carbohydrate = db.Column('carbohydrate', db.Float, nullable=False)
+    fiber = db.Column('fiber', db.Float, nullable=False)
+    calcium = db.Column('calcium', db.Float, nullable=False)
+    phosphor = db.Column('phosphor', db.Float, nullable=False)
+    iron = db.Column('iron', db.Float, nullable=False)
+    sodium = db.Column('sodium', db.Float, nullable=False)
+    potassium = db.Column('potassium', db.Float, nullable=False)
+    copper = db.Column('copper', db.Float, nullable=False)
+    zinc = db.Column('zinc', db.Float, nullable=False)
+    vit_a = db.Column('vit_a', db.Float, nullable=False)
+    vit_b1 = db.Column('vit_b1', db.Float, nullable=False)
+    vit_b2 = db.Column('vit_b2', db.Float, nullable=False)
+    vit_b3 = db.Column('vit_b3', db.Float, nullable=False)
+    vit_c = db.Column('vit_c', db.Float, nullable=False)
+    ip_address = db.Column('ip_address', db.String(18))
+    created_at = db.Column('created_at', db.Date, default=db.func.now(), nullable=False)
+
+    def json(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'code': self.code
+        }
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_from_db(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    def commit_to_db(self):
         db.session.commit()
     
     @classmethod

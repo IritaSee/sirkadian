@@ -64,4 +64,23 @@ class organ_system(enum.Enum):
     URI = "urinary"
     VIS = "visual"
 
+# class food_prohibition(enum.Enum):
+#     PROTEIN = "protein"
+#     FAT = "fat"
+#     CARBOHYDRATE = "carbohydrate"
+#     FIBER = "fiber"
+#     CALCIUM = "calcium"
+#     PHOSPHOR = "phosphor"
+#     IRON = "iron"
+#     SODIUM = "sodium"
+#     POTASSIUM = "potassium"
+#     COPPER = "copper"
+#     ZINC = "zinc"
+
+# class sport_prohibition(enum.Enum):
+#     DIFFICULTY = "difficulty"
+#     DURATION = "duration"
+
+# # Semua prohibition artinya high (protein = high protein, difficulty = high difficulty)
+
 # end of defining enums

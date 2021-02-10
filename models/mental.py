@@ -10,8 +10,9 @@ class MeditationModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     name = db.Column('name', db.String(80), nullable=False)
+    mood = db.Column('mood', db.Text)
     duration = db.Column('duration', db.Integer)
-    link = db.Column('link', db.String(120))
+    filename = db.Column('filename', db.Text)
 
     def save_to_db(self):
         db.session.add(self)
@@ -38,9 +39,10 @@ class SongModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     name = db.Column('name', db.String(80), nullable=False)
-    mood = db.Column('mood', db.Enum(song_mood))
+    artist = db.Column('artist', db.String(80), nullable=False)
+    mood = db.Column('mood', db.Text)
     duration = db.Column('duration', db.Integer)
-    link = db.Column('link', db.String(120))
+    filename = db.Column('filename', db.Text)
 
     def save_to_db(self):
         db.session.add(self)

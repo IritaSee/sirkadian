@@ -1,24 +1,35 @@
-import os
 import json
-import io
 from os.path import join, dirname, realpath
 from decimal import Decimal
 from flask import request, jsonify, flash, redirect, current_app, render_template, make_response
-from flask_restful import Resource, reqparse
+from flask_restful import Resource
+from flask_jwt_extended import (
+    create_access_token,
+    create_refresh_token,
+    jwt_refresh_token_required,
+    get_jwt_identity,
+    jwt_required,
+    get_raw_jwt,
+    decode_token
+)
 from werkzeug.utils import secure_filename
-from blacklist import BLACKLIST
+from blacklist import *
 from db import db
 from models.user import (
-    UserModel
+    UserModel,
+    UserNecessityModel
 )
 from models.user_history import (
-    UserFoodHistoryModel
+    UserFoodHistoryModel,
+    UserHealthHistoryModel
 )
 from models.food import (
     FoodModel,
     FoodIngredientsModel,
     FoodRecipeIngredientsModel,
-    FoodAnalyticsModel
+    FoodAnalyticsModel,
+    FoodIngredientsInfoModel,
+    FoodInstructionsModel
 )
 from models.assoc import (
     food_ingredients_assoc
@@ -127,6 +138,8 @@ class AddFood(Resource):
                 item[1] = float(item[1]) * 5
                 item[2] = "gram"
                 listbahan_processed[idx] = item
+            elif "Minyak" in item[0]: # hilangkan perhitungan buat minyak
+                item[1] = 0
 
         # todo: entah kenapa setelah for loop sm if else perubahan listnya
         # ga kesimpen di list jd kalkulasi berikutnya berantakan
@@ -157,8 +170,6 @@ class AddFood(Resource):
         data_to_input = FoodModel(
             name = food_name,
             food_type = food_type,
-            food_ingredients_info = str(ingredient_all),
-            food_instructions = str(instructions),
             duration = food_duration,
             serving = food_serving,
             difficulty = food_difficulty,
@@ -187,7 +198,20 @@ class AddFood(Resource):
             ingredient_to_db = FoodIngredientsModel.find_by_id(item)
             data_to_input.food_ingredients.append(ingredient_to_db)
 
-        data_to_input.save_to_db()
+        for item in ingredient_all:
+            data_to_input.food_ingredients_info.append(FoodIngredientsInfoModel(ingredients_info = item))
+            db.session.add(FoodIngredientsInfoModel(ingredients_info = item))
+
+        for item in instructions:
+            data_to_input.food_instructions.append(FoodInstructionsModel(instructions = item))
+            db.session.add(FoodInstructionsModel(instructions = item))
+
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
+            flash('Error tambah makanan!')
+            return redirect(request.url)
 
         flash('Sukses tambah makanan!')
         return redirect(request.url)
@@ -278,39 +302,39 @@ class FoodTrending(Resource):
 class FoodRecommendation(Resource):
     @classmethod
     def get(cls):
-        # send json, isi nutrisi maksimal yang diinginkan
+        # send json user id
         pass
+
+    def post(cls):
+        # send foods that have eaten, deduct value from necessity table
         
 
 class FoodNecessity(Resource):
-    @classmethod
-    def get(cls):
+    @jwt_refresh_token_required
+    def get(self):
         # ?id=...
         # Food Nutrition necessity in one day.
         _id = request.args.get('id')
 
-        user_data = UserModel.find_by_id(_id).with_entities(UserModel.id, UserModel.name, UserModel.gender, UserModel.dob)
-        user_health = UserHealthHistoryModel.find_by_user_id(_id).with_entities(
+        user_data = UserModel.query.filter_by(id=_id).with_entities(UserModel.id, UserModel.gender, UserModel.dob).order_by(UserModel.id.desc()).first()
+        user_health = UserHealthHistoryModel.query.filter_by(user_id=_id).with_entities(
             UserHealthHistoryModel.height,
             UserHealthHistoryModel.weight,
             UserHealthHistoryModel.activity_level,
             UserHealthHistoryModel.maintain_weight
-            )
+        ).order_by(UserHealthHistoryModel.id.desc()).first()
         
         # Hitung BMI
-        user_weight = user_health['weight']
-        user_height_cm = user_health['height']
-        user_height_m = user_health['height'] / 100
+        user_weight = user_health.weight
+        user_height_cm = user_health.height
+        user_height_m = user_health.height / 100
 
         bmi = user_weight / (user_height_m ** 2)
-        bmi = Decimal(bmi)
-        
-        bmi = round(bmi, 0)
 
         # Hitung kalori
-        user_gender = user_data['gender']
-        user_activity_level = user_health['activity_level']
-        user_maintain_weight = user_health['maintain_weight']
+        user_gender = user_data.gender
+        user_activity_level = user_health.activity_level
+        user_maintain_weight = user_health.maintain_weight
         user_date = user_data.dob
         today_date = date.today()
 
@@ -318,22 +342,22 @@ class FoodNecessity(Resource):
 
         if user_gender == 'male':
             if user_activity_level == 'sedentary':
-                    target_calorie = ( (10 * user_weight) + (6.25 * user_height) - (5 * user_age) + 5 ) * 1.2
+                    target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) + 5 ) * 1.2
             elif user_activity_level == 'low':
-                    target_calorie = ( (10 * user_weight) + (6.25 * user_height) - (5 * user_age) + 5 ) * 1.37
+                    target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) + 5 ) * 1.37
             elif user_activity_level == 'medium':
-                    target_calorie = ( (10 * user_weight) + (6.25 * user_height) - (5 * user_age) + 5 ) * 1.55
+                    target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) + 5 ) * 1.55
             elif user_activity_level == 'high':
-                    target_calorie = ( (10 * user_weight) + (6.25 * user_height) - (5 * user_age) + 5 ) * 1.9
+                    target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) + 5 ) * 1.9
         elif user_gender == 'female':
             if user_activity_level == 'sedentary':
-                    target_calorie = ( (10 * user_weight) + (6.25 * user_height) - (5 * user_age) - 161 ) * 1.2
+                    target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) - 161 ) * 1.2
             elif user_activity_level == 'low':
-                    target_calorie = ( (10 * user_weight) + (6.25 * user_height) - (5 * user_age) - 161 ) * 1.37
+                    target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) - 161 ) * 1.37
             elif user_activity_level == 'medium':
-                    target_calorie = ( (10 * user_weight) + (6.25 * user_height) - (5 * user_age) - 161 ) * 1.55
+                    target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) - 161 ) * 1.55
             elif user_activity_level == 'high':
-                    target_calorie = ( (10 * user_weight) + (6.25 * user_height) - (5 * user_age) - 161 ) * 1.9
+                    target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) - 161 ) * 1.9
         
         if user_maintain_weight == 0:
             target_calorie_min = target_calorie - 0
@@ -602,30 +626,57 @@ class FoodNecessity(Resource):
                 target_vit_b3 = 14
                 target_vit_c = 75
 
+        db.session.add(UserNecessityModel(
+            user_id = user_data.id,
+            calorie_min = round(target_calorie_min, 1),
+            calorie_max = round(target_calorie_max, 1),
+            protein = round(target_protein, 1),
+            fat = round(target_fat, 1),
+            carbohydrate = round(target_carbohydrate, 1),
+            fiber = round(target_fiber, 1),
+            calcium = round(target_calcium, 1),
+            phosphor = round(target_phosphor, 1),
+            iron = round(target_iron, 1),
+            sodium = round(target_sodium, 1),
+            potassium = round(target_potassium, 1),
+            copper = round(target_copper, 1),
+            zinc = round(target_zinc, 1),
+            vit_a = round(target_vit_a, 1),
+            vit_b1 = round(target_vit_b1, 1),
+            vit_b2 = round(target_vit_b2, 1),
+            vit_b3 = round(target_vit_b3, 1),
+            vit_c = round(target_vit_c, 1),
+            ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+        ))
+
+        try:
+            db.session.commit()
+        except:
+            return {'message', 'Error database!'}
+
         return jsonify({
-            'user_id': user_data['id'],
-            'user_name': user_data['name'],
+            'user_id': user_data.id,
             'user_gender': user_gender,
             'user_age': user_age,
-            'bmi': bmi,
-            'calorie_min': target_calorie_min,
-            'calorie_maks': target_calorie_max,
-            'protein': target_protein,
-            'fat': target_fat,
-            'carbohydrate': target_carbohydrate,
-            'fiber': target_fiber,
-            'calcium': target_calcium,
-            'phosphor': target_phosphor,
-            'iron': target_iron,
-            'sodium': target_sodium,
-            'potassium': target_potassium,
-            'copper': target_copper,
-            'zinc': target_zinc,
-            'vit_a': target_vit_a,
-            'vit_b1': target_vit_b1,
-            'vit_b2': target_vit_b2,
-            'vit_b3': target_vit_b3,
-            'vit_c': target_vit_c
+            'bmi': float(round(bmi, 1)),
+            'calorie_min': round(target_calorie_min, 1),
+            'calorie_max': round(target_calorie_max, 1),
+            'protein': round(target_protein, 1),
+            'fat': round(target_fat, 1),
+            'carbohydrate': round(target_carbohydrate, 1),
+            'fiber': round(target_fiber, 1),
+            'calcium': round(target_calcium, 1),
+            'phosphor': round(target_phosphor, 1),
+            'iron': round(target_iron, 1),
+            'sodium': round(target_sodium, 1),
+            'potassium': round(target_potassium, 1),
+            'copper': round(target_copper, 1),
+            'zinc': round(target_zinc, 1),
+            'vit_a': round(target_vit_a, 1),
+            'vit_b1': round(target_vit_b1, 1),
+            'vit_b2': round(target_vit_b2, 1),
+            'vit_b3': round(target_vit_b3, 1),
+            'vit_c': round(target_vit_c, 1)
         })
 
 class FoodDetail(Resource):
