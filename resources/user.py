@@ -95,7 +95,7 @@ class UserRegister(Resource):
         except:
             return {"message": "Error database step 2!"}
         
-        msg = Message('Verifikasi akun Sirkadianmu', sender = 'sirkadiancorporation@gmail.com', recipients = [user.email])
+        msg = Message('Verifikasi akun Sirkadianmu', sender = 'sirkadiancorporation@gmail.com', recipients = [data['email']])
         msg.html = "<h3>Verifikasi akun Sirkadianmu</h3><br><p>Masukkan kode ini " + str(key) + " di aplikasi Sirkadian untuk mengaktifkan akun Anda.</p><br><p>Abaikan pesan ini jika tidak merasa mendaftar</p><br></p>Terima kasih</p><br><p>Regards, Sirkadian</p>"
         mail.send(msg)
 

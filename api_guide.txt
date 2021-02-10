@@ -1,0 +1,358 @@
+PANDUAN API Sirkadian
+
+I. FOOD RELATED
+
+1. GET all ingredients
+    SEND GET <url>/api/food/get_all_food_ingredients_api
+2. GET all food
+    SEND GET <url>/api/food/get_all_food_api
+3. GET trending food
+    SEND GET <url>/api/food/trending?o=...&ys=...&ms=...&ds=...&ye=...&me=...&de=...
+        ?o=1 : get according to date start and end.
+            ys = year start. ex: 2020
+            ms = month start. ex: 1
+            ds = day start. ex: 31
+            ye = year end. ex: 2021
+            me = month end. ex: 2
+            de = day end. ex: 2
+        ?o=2 : get today's trending (no extra option needed)
+    RESPONSE:
+        [
+            {
+                "created_at": "2021-02-11T00:39:24",
+                "food": {
+                    "id": 152,
+                    "name": "asdklakskldja"
+                },
+                "id": 6,
+                "ip_address": "127.0.0.1"
+            }
+        ]
+4. POST trending food
+    SEND POST <url>/api/food/trending?o=1
+    with JSON:
+        {
+            "food_id": 152
+        }
+    only supports one food at a time.
+5. GET food detail
+    SEND GET <url>/api/food/detail?o=...&id=...
+        ?o=1 : full detail of food
+        ?o=2 : half detail of food (only calorie, duration, food_type, name)
+        id = id of the food
+    RESPONSE:
+        {
+            "calcium": 619.7,
+            "calorie": 2455.02,
+            "carbohydrate": 70.368,
+            "copper": 3.51978,
+            "difficulty": "hard",
+            "duration": 20,
+            "fat": 121.388,
+            "fiber": 110.0,
+            "food_ingredients": [
+                {
+                    "id": 2,
+                    "name": "Abalone, cokelat, liar, segar"
+                },
+                {
+                    "id": 43,
+                    "name": "Ayam, daging, segar"
+                },
+                {
+                    "id": 40,
+                    "name": "Asparagus, hijau, segar"
+                }
+            ],
+            "food_ingredients_info": [
+                {
+                    "id": 21,
+                    "ingredients_info": "Abalone, cokelat, liar, segar 23 gram"
+                },
+                {
+                    "id": 25,
+                    "ingredients_info": "Asparagus, hijau, segar 100 butir"
+                },
+                {
+                    "id": 23,
+                    "ingredients_info": "Ayam, daging, segar 31 sdm"
+                }
+            ],
+            "food_instructions": [
+                {
+                    "id": 22,
+                    "instructions": "sdfnsdetrj"
+                },
+                {
+                    "id": 24,
+                    "instructions": "estjsert5"
+                },
+                {
+                    "id": 26,
+                    "instructions": "sert5jes5i"
+                }
+            ],
+            "food_type": "sayur",
+            "id": 152,
+            "image_filename": "proxy-image.jpg",
+            "iron": 55.7195,
+            "name": "asdklakskldja",
+            "phosphor": 3105.3,
+            "potassium": 17838.6,
+            "protein": 212.794,
+            "serving": 2,
+            "sodium": 671.25,
+            "tags": "asdhg,asdb,adsr,as",
+            "vit_a": 1139.25,
+            "vit_b1": 7.5,
+            "vit_b2": 6.0851,
+            "vit_b3": 96.96,
+            "vit_c": 750.0,
+            "zinc": 19.4702
+        }
+6. GET food Nutrition
+    SEND GET <url>/api/food/nutrition?id=...
+        id: id of the food
+    RESPONSE:
+    {
+        "calcium": 619.7,
+        "calorie": 2455.02,
+        "carbohydrate": 70.368,
+        "copper": 3.51978,
+        "fat": 121.388,
+        "fiber": 110.0,
+        "iron": 55.7195,
+        "phosphor": 3105.3,
+        "potassium": 17838.6,
+        "protein": 212.794,
+        "sodium": 671.25,
+        "vit_a": 1139.25,
+        "vit_b1": 7.5,
+        "vit_b2": 6.0851,
+        "vit_b3": 96.96,
+        "vit_c": 750.0,
+        "zinc": 19.4702
+    }
+7. GET food recipe
+    SEND GET <url>/api/food/recipe?id=...
+        id: id of the food
+    RESPONSE:
+        {
+            "difficulty": "hard",
+            "duration": 20,
+            "food_ingredients": [
+                {
+                    "id": 2,
+                    "name": "Abalone, cokelat, liar, segar"
+                },
+                {
+                    "id": 43,
+                    "name": "Ayam, daging, segar"
+                },
+                {
+                    "id": 40,
+                    "name": "Asparagus, hijau, segar"
+                }
+            ],
+            "food_ingredients_info": [
+                {
+                    "id": 21,
+                    "ingredients_info": "Abalone, cokelat, liar, segar 23 gram"
+                },
+                {
+                    "id": 25,
+                    "ingredients_info": "Asparagus, hijau, segar 100 butir"
+                },
+                {
+                    "id": 23,
+                    "ingredients_info": "Ayam, daging, segar 31 sdm"
+                }
+            ],
+            "food_instructions": [
+                {
+                    "id": 22,
+                    "instructions": "sdfnsdetrj"
+                },
+                {
+                    "id": 24,
+                    "instructions": "estjsert5"
+                },
+                {
+                    "id": 26,
+                    "instructions": "sert5jes5i"
+                }
+            ],
+            "food_type": "sayur",
+            "id": 152,
+            "image_filename": "proxy-image.jpg",
+            "name": "asdklakskldja",
+            "serving": 2
+        }
+8. GET food history
+    SEND GET <url>/api/food/history?o=...&ft=...&ys=...&ms=...&ds=...&ye=...&me=...&de=...
+    ?o=1: date filter according to start and end date
+        ys = year start. ex: 2020
+        ms = month start. ex: 1
+        ds = day start. ex: 31
+        ye = year end. ex: 2021
+        me = month end. ex: 2
+        de = day end. ex: 2
+    ?o=2: today's history
+    ?o=3: according to food type
+        accepted: ft = 1, ft = 2, ft = 3, ft = 4 (1=breakfast, 2=lunch, 3=dinner, 4=snack)
+9. POST food history
+    SEND POST <url>/api/food/history
+    with JSON:
+    {
+        "user_id": "1",
+        "food_id": [
+            {"id": "116"},
+            {"id": "117"}
+        ],
+        "food_type": "breakfast"
+    }
+    food_type can be breakfast, lunch, dinner, snack
+10. GET food necessity
+    TOKEN REQUIRED
+    SEND GET <url>/api/food/necessity?id=...
+        id: id of the user
+    RESPONSE:
+    {
+        "bmi": 23.9,
+        "calcium": 1000,
+        "calorie_max": 2180.0,
+        "calorie_min": 1930.0,
+        "carbohydrate": 430,
+        "copper": 0.9,
+        "fat": 75,
+        "fiber": 37,
+        "iron": 9,
+        "phosphor": 700,
+        "potassium": 4700,
+        "protein": 65,
+        "sodium": 1500,
+        "user_age": 19,
+        "user_gender": "male",
+        "user_id": 7,
+        "vit_a": 650,
+        "vit_b1": 1.2,
+        "vit_b2": 1.3,
+        "vit_b3": 16,
+        "vit_c": 90,
+        "zinc": 11
+    }
+
+II. USER RELATED
+
+1. User register
+    SEND POST <url>/user/register
+    with JSON:
+    {
+        "username": "johndoe",
+        "password": "123456",
+        "email": "johndoe@gmail.com"
+    }
+    RESPONSE:
+    {
+        "message": "Success!",
+        "username": "johndoe",
+        "verification_code": "937958",
+        "activated": 0
+    }
+2. User activation
+    SEND POST <url>/user/activate?id=...&code=...
+        id: user id
+        code: 6 digits verification code
+    RESPONSE:
+    {
+        "message": "Success! Now you may login."
+    }
+3. User login
+    SEND POST <url>/user/login
+    with JSON:
+    {
+        "username": "johndoe",
+        "password": "123456"
+    }
+    RESPONSE:
+    {
+        "message": "Success",
+        "user_id": 9,
+        "username": "johndoe",
+        "email": "johndoe@gmail.com",
+        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTI5NzY0NzAsIm5iZiI6MTYxMjk3NjQ3MCwianRpIjoiMjZhYjQ0ZTktNjRiNy00NTQ0LWJmN2UtMzI3NzBhMDQyZTg1IiwiZXhwIjoxNjEyOTc3MzcwLCJpZGVudGl0eSI6OSwiZnJlc2giOnRydWUsInR5cGUiOiJhY2Nlc3MifQ.usapjoFII5PLMSNlWii7iwHGk2aVIFPTNB_7MWBf6d8",
+        "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTI5NzY0NzAsIm5iZiI6MTYxMjk3NjQ3MCwianRpIjoiY2Q0MWY4NGYtYTlhMy00OTQ3LTliNTQtYjUzZmNhOGQyYTRjIiwiZXhwIjoxNjE1NTY4NDcwLCJpZGVudGl0eSI6OSwidHlwZSI6InJlZnJlc2gifQ.nFG0g7mKC-ruWDvaQ5ZHEg34_Nxp9FFt_VHSsoNamhc"
+    }
+4. User initial setup
+    ACCESS TOKEN REQUIRED ~ please setup within 15 minutes of login.
+    SEND POST <url>/user/initial
+    with JSON:
+    {
+        "id": 7,
+        "dob": "02-09-2001",
+        "gender": "male",
+        "lang": "idn",
+        "height": 165,
+        "weight": 65,
+        "activity_level": "sedentary",
+        "sport_difficulty": "easy",
+        "vegan": false,
+        "maintain_weight": 1,
+        "allergy": [1,7],
+        "disease": [1,2],
+        "addiction": [1,2]
+    }
+    dob format MUST BE dd-mm-yyyy
+    gender can be male, female
+    lang can be idn, eng
+    height is in centimeters
+    weight is in kilograms
+    activity_level can be sedentary, low, medium, high
+    sport_difficulty can be easy, medium, hard
+    vegan is boolean: false or true
+    maintain_weight can be 0,1,2,3,4,5,6.
+        0=maintain weight
+        1=lose slow
+        2=lose medium
+        3=lose fast
+        4=gain slow
+        5=gain medium
+        6=gain fast
+    allergy, disease, addiction: input array with id. use [id, id, id, id, id, etc]
+
+    RESPONSE:
+    {
+        "message": "Success, welcome to app!"
+    }
+5. User forgot password
+    SEND POST <url>/user/forgot/<option> example: <url>/user/forgot/2
+        option 1 = user forgot password init function
+            with JSON:
+            {
+                "identity": "aureliusfnvito@gmail.com"
+            }
+            RESPONSE:
+            {
+                "message": "Success! Silahkan cek email Anda"
+            }
+            identity can be email or username
+            user will be sent an email with link/verification code to verify
+        option 2 = user change password
+            with JSON:
+            {
+                "user_id": 7,
+                "new_password": "123456"
+            }
+            RESPONSE:
+            {
+                "message": "Success"
+            }
+    SEND GET <url>/user/forgot/verify?id=...&code=...
+            id: user id
+            code: verification code (6 digits)
+        user can click on the link and it will verify automatically,
+        or else user can input verification code from the email to the app.
+        in that case, app will send API GET request.
+6. User logout
+    REFRESH TOKEN REQUIRED
+    SEND POST <url>/user/logout

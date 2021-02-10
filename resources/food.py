@@ -307,6 +307,7 @@ class FoodRecommendation(Resource):
 
     def post(cls):
         # send foods that have eaten, deduct value from necessity table
+        pass
         
 
 class FoodNecessity(Resource):
