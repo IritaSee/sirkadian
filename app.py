@@ -145,6 +145,7 @@ api.add_resource(AddSong, '/api/song/add_song_interface')
 
 # resource related to sport
 api.add_resource(AddSport, '/api/sport/add_sport_interface')
+api.add_resource(Sport, '/sport/<int:sport_id>')
 
 # resource related to tagging
 api.add_resource(AddTag, '/admin_only/add_tag')

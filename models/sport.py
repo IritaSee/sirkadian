@@ -15,6 +15,9 @@ class SportModel(db.Model):
     duration = db.Column('duration', db.Integer) # estimated duration per set
     image_filename = db.Column('image_filename', db.Text)
 
+    def dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
@@ -26,7 +29,7 @@ class SportModel(db.Model):
     @classmethod
     def find_by_name(cls, name):
         return cls.query.filter_by(name=name).first()
-    
+
     @classmethod
     def find_by_id(cls, _id):
         return cls.query.filter_by(id=_id).first()

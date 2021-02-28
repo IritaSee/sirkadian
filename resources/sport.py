@@ -24,6 +24,22 @@ from datetime import (
 )
 import datetime
 
+class Sport(Resource):
+    @classmethod
+    def get(cls, sport_id):
+        sport = SportModel.find_by_id(sport_id)
+        if not sport:
+            return {'message': 'Sport not found'}, 404
+        return jsonify(sport.dict())
+
+    @classmethod
+    def delete(cls, user_id):
+        sport = SportModel.find_by_id(sport_id)
+        if not sport:
+            return {'message': 'Sport not found'}, 404
+        sport.delete_from_db()
+        return {'message': 'Sport deleted'}, 200
+
 class AddSport(Resource):
     def get(self):
         headers = {'Content-Type': 'text/html'}
@@ -55,7 +71,7 @@ class AddSport(Resource):
             filename = secure_filename(file.filename)
             file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], "sport_image", filename))
 
-        
+
         db.session.add(SportModel(
             name = sport_name,
             cps = sport_cps,
