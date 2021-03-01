@@ -20,7 +20,6 @@ marshmallow==3.10.0
 marshmallow-enum==1.5.1
 marshmallow-sqlalchemy==0.24.1
 mysqlclient==2.0.2
-psycopg2==2.8.6
 PyJWT==1.7.1
 python-dateutil==2.8.1
 python-editor==1.0.4
