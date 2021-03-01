@@ -218,23 +218,26 @@ class AddFood(Resource):
 
 class GetFoodById(Resource):
     @classmethod
-    def get(cls, _id):
-        food = FoodModel.find_by_id(_id).first()
+    def get(cls, food_id):
+        food = FoodModel.find_by_id(food_id)
+        data = FoodSchema().dump(food)
 
-        if not food:
+        if not data:
             return {"message": "Food not found"}, 404
 
-        return food.json()
+        return jsonify(data)
 
 class GetIngredientsById(Resource):
     @classmethod
-    def get(cls, _id):
-        food = FoodIngredientsModel.find_by_id(_id).first()
+    def get(cls, ingredient_id):
+        ingredient = FoodIngredientsModel.find_by_id(ingredient_id)
 
-        if not food:
+        data = FoodIngredientsSchema().dump(ingredient)
+
+        if not data:
             return {"message": "Ingredient not found"}, 404
 
-        return food.json()
+        return jsonify(data)
 
 class GetAllFoodIngredientsAPI(Resource):
     @classmethod
