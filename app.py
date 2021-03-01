@@ -27,6 +27,10 @@ from models.addiction import *
 from models.allergy import *
 from models.mental import *
 
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
 app = Flask(__name__)
 if app.config["ENV"] == "production":
     app.config.from_object("config.ProductionConfig")
@@ -91,6 +95,17 @@ def revoked_token_callback():
 @app.before_first_request
 def create_tables():
     db.create_all()
+
+@app.after_request
+def after_request_func(response):
+    if request.method == 'POST':
+        if response.status_code == 405:
+            request_data = {"url": request.environ["REQUEST_URI"], "ip": request.remote_addr}
+            FORMAT = '%(asctime)s %(levelname)s %(message)s %(url)s %(ip)s'
+            logging.basicConfig(filename='demo.log', format=FORMAT, datefmt='%d/%m/%Y %I:%M:%S %p')
+            logging.warning("POST", extra=request_data)
+            return response
+    return response
 
 # resource related to general website
 @app.route('/')
