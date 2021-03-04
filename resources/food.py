@@ -30,7 +30,8 @@ from models.food import (
     FoodRecipeIngredientsModel,
     FoodAnalyticsModel,
     FoodIngredientsInfoModel,
-    FoodInstructionsModel
+    FoodInstructionsModel,
+    FoodHelperModel
 )
 from models.assoc import (
     food_ingredients_assoc
@@ -115,7 +116,7 @@ class AddFood(Resource):
                 instructions.append(req[item])
 
         jumlahbahan = len(namabahan)
-        
+
         listbahansorted = list(zip(namabahan, angkabahan, satuanbahan))
         listbahan_processed = list(zip(namabahan, angkabahan, satuanbahan))
         ingredient_all = []
@@ -146,7 +147,7 @@ class AddFood(Resource):
         # ga kesimpen di list jd kalkulasi berikutnya berantakan
         # update 19-01-2021 KELARRRR
         ingredient_dict = []
-        
+
         for item in listbahan_processed:
             ingredient_db = FoodIngredientsModel.find_by_name(item[0])
             ingredient_dict.append(ingredient_db.id)
@@ -167,8 +168,8 @@ class AddFood(Resource):
             vit_b2 = vit_b2 + ( ( float(item[1]) / 100 ) * ingredient_db.vit_b2 )
             vit_b3 = vit_b3 + ( ( float(item[1]) / 100 ) * ingredient_db.vit_b3 )
             vit_c = vit_c + ( ( float(item[1]) / 100 ) * ingredient_db.vit_c )
-            
-        data_to_input = FoodModel(
+
+        data_to_input = FoodHelperModel(
             name = food_name,
             food_type = food_type,
             duration = food_duration,
@@ -195,16 +196,28 @@ class AddFood(Resource):
             image_filename = filename
         )
 
+        # Input for trigger only then Delete
+        db.session.add(data_to_input)
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
+            flash('Error tambah makanan!')
+            return redirect(request.url)
+        db.session.add(data_to_input)
+
+        row_update = FoodModel.query.order_by(FoodModel.id.desc()).first()
+
         for item in ingredient_dict:
             ingredient_to_db = FoodIngredientsModel.find_by_id(item)
-            data_to_input.food_ingredients.append(ingredient_to_db)
+            row_update.food_ingredients.append(ingredient_to_db)
 
         for item in ingredient_all:
-            data_to_input.food_ingredients_info.append(FoodIngredientsInfoModel(ingredients_info = item))
+            row_update.food_ingredients_info.append(FoodIngredientsInfoModel(ingredients_info = item))
             db.session.add(FoodIngredientsInfoModel(ingredients_info = item))
 
         for item in instructions:
-            data_to_input.food_instructions.append(FoodInstructionsModel(instructions = item))
+            row_update.food_instructions.append(FoodInstructionsModel(instructions = item))
             db.session.add(FoodInstructionsModel(instructions = item))
 
         try:
@@ -276,7 +289,7 @@ class FoodTrending(Resource):
 
             start_date = date(year=year_s_url, month=month_s_url, day=day_s_url)
             end_date = date(year=year_e_url, month=month_e_url, day=day_e_url)
-            
+
             analytics_food = FoodAnalyticsModel.query.filter(FoodAnalyticsModel.created_at <= end_date).filter(FoodAnalyticsModel.created_at >= start_date)
             data = FoodAnalyticsSchema(many=True).dump(analytics_food)
             return jsonify(data)
@@ -312,7 +325,7 @@ class FoodRecommendation(Resource):
     def post(cls):
         # send foods that have eaten, deduct value from necessity table
         pass
-        
+
 
 class FoodNecessity(Resource):
     @jwt_refresh_token_required
@@ -328,7 +341,7 @@ class FoodNecessity(Resource):
             UserHealthHistoryModel.activity_level,
             UserHealthHistoryModel.maintain_weight
         ).order_by(UserHealthHistoryModel.id.desc()).first()
-        
+
         # Hitung BMI
         user_weight = user_health.weight
         user_height_cm = user_health.height
@@ -363,7 +376,7 @@ class FoodNecessity(Resource):
                     target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) - 161 ) * 1.55
             elif user_activity_level == 'high':
                     target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) - 161 ) * 1.9
-        
+
         if user_maintain_weight == 0:
             target_calorie_min = target_calorie - 0
             target_calorie_max = target_calorie + 0
@@ -756,7 +769,7 @@ class FoodRecipe(Resource):
             'tags'
             ]).dump(food)
 
-        # food_ingredients_info_str = 
+        # food_ingredients_info_str =
         # print(food_ingredients_info_str)
         # data['food_ingredients_info'] = json.loads(food_ingredients_info_str)
 
@@ -780,7 +793,7 @@ class FoodHistory(Resource):
 
             start_date = date(year=year_s_url, month=month_s_url, day=day_s_url)
             end_date = date(year=year_e_url, month=month_e_url, day=day_e_url)
-            
+
             history_food = UserFoodHistoryModel.query.filter(UserFoodHistoryModel.created_at <= end_date).filter(UserFoodHistoryModel.created_at >= start_date)
             data = UserFoodHistorySchema(many=True).dump(history_food)
             return jsonify(data)
@@ -829,10 +842,10 @@ class FoodHistory(Resource):
             total_calorie = total_calorie + find_food.calorie
 
             data_to_input.food.append(find_food)
-        
+
         data_to_input.total_calorie = total_calorie
         data_to_input.save_to_db()
-        
+
         return jsonify({
             'message': 'Success!'
         })

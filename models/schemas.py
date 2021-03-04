@@ -14,7 +14,9 @@ from models.food import (
     FoodIngredientsModel,
     FoodAnalyticsModel,
     FoodIngredientsInfoModel,
-    FoodInstructionsModel
+    FoodInstructionsModel,
+    FoodHelperModel,
+    FoodMaxModel
 )
 from models.user_history import (
     UserFoodHistoryModel
@@ -45,6 +47,14 @@ class FoodSchema(ma.SQLAlchemyAutoSchema):
     food_ingredients = ma.Nested('FoodIngredientsSchema', only=('id', 'name'), many=True)
     food_ingredients_info = ma.Nested('FoodIngredientsInfoSchema', many=True)
     food_instructions = ma.Nested('FoodInstructionsSchema', many=True)
+
+class FoodHelperSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = FoodHelperModel
+
+class FoodMaxSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = FoodMaxModel
 
 class FoodAnalyticsSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
