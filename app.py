@@ -28,8 +28,9 @@ from models.allergy import *
 from models.mental import *
 
 import logging
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+# log = logging.getLogger('werkzeug')
+# log.setLevel(logging.ERROR)
+
 
 app = Flask(__name__)
 if app.config["ENV"] == "production":
@@ -100,8 +101,9 @@ def create_tables():
 def after_request_func(response):
     if request.method == 'POST':
         if response.status_code == 405:
+            print(response.json['message'])
             request_data = {"url": request.environ["REQUEST_URI"], "ip": request.remote_addr}
-            FORMAT = '%(asctime)s %(levelname)s %(message)s %(url)s %(ip)s'
+            FORMAT = '%(asctime)s %(message)s %(url)s %(ip)s'
             logging.basicConfig(filename='demo.log', format=FORMAT, datefmt='%d/%m/%Y %I:%M:%S %p')
             logging.warning("POST", extra=request_data)
             return response
@@ -144,6 +146,7 @@ api.add_resource(FoodNutrition, '/api/food/nutrition')
 api.add_resource(FoodRecipe, '/api/food/recipe')
 api.add_resource(FoodHistory, '/api/food/history')
 api.add_resource(FoodNecessity, '/api/food/necessity')
+api.add_resource(FoodRecommendation, '/api/food/recommendation')
 # belum finish: necessity
 
 # resource related to addiction
