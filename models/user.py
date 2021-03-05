@@ -94,8 +94,7 @@ class UserNecessityModel(db.Model):
     
     id = db.Column('id', db.Integer, primary_key=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
-    calorie_min = db.Column('calorie_min', db.Float, nullable=False)
-    calorie_max = db.Column('calorie_max', db.Float, nullable=False)
+    calorie = db.Column('calorie', db.Float, nullable=False)
     protein = db.Column('protein', db.Float, nullable=False)
     fat = db.Column('fat', db.Float, nullable=False)
     carbohydrate = db.Column('carbohydrate', db.Float, nullable=False)

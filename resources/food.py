@@ -49,6 +49,7 @@ from datetime import (
     date
 )
 import datetime
+from sqlalchemy import and_
 
 class AddFood(Resource):
     def get(self):
@@ -318,8 +319,183 @@ class FoodTrending(Resource):
 
 class FoodRecommendation(Resource):
     @classmethod
-    def get(cls):
+    def get(self):
         # send json user id
+        # ?option=...&id=...&num=...
+        # 1=initial recommendation, 2=by number of food
+        _id = request.args.get('id')
+        num = request.args.get('num')
+        option = request.args.get('option')
+        number_data = 20
+        if option == '1':
+            necessity = UserNecessityModel.query.filter_by(user_id=_id).order_by(UserNecessityModel.id.desc()).first()
+            pokok = FoodModel.query.filter_by(name='Nasi Putih').first()
+            best_lauk = FoodModel.query.filter(and_(
+                # FoodModel.calorie <= necessity.calorie,
+                # FoodModel.protein <= necessity.protein,
+                # FoodModel.fat <= necessity.fat,
+                # FoodModel.carbohydrate <= necessity.carbohydrate,
+                # FoodModel.fiber <= necessity.fiber,
+                # FoodModel.calcium <= necessity.calcium,
+                # FoodModel.phosphor <= necessity.phosphor,
+                # FoodModel.iron <= necessity.iron,
+                # FoodModel.sodium <= necessity.sodium,
+                # FoodModel.potassium <= necessity.potassium,
+                # FoodModel.copper <= necessity.copper,
+                # FoodModel.zinc <= necessity.zinc,
+                FoodModel.vit_a <= necessity.vit_a,
+                FoodModel.vit_b1 <= necessity.vit_b1,
+                FoodModel.vit_b2 <= necessity.vit_b2,
+                FoodModel.vit_b3 <= necessity.vit_b3,
+                FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).limit(number_data)
+            best_sayur = FoodModel.query.filter(and_(
+                # FoodModel.calorie <= necessity.calorie,
+                # FoodModel.protein <= necessity.protein,
+                # FoodModel.fat <= necessity.fat,
+                # FoodModel.carbohydrate <= necessity.carbohydrate,
+                # FoodModel.fiber <= necessity.fiber,
+                # FoodModel.calcium <= necessity.calcium,
+                # FoodModel.phosphor <= necessity.phosphor,
+                # FoodModel.iron <= necessity.iron,
+                # FoodModel.sodium <= necessity.sodium,
+                # FoodModel.potassium <= necessity.potassium,
+                # FoodModel.copper <= necessity.copper,
+                # FoodModel.zinc <= necessity.zinc,
+                FoodModel.vit_a <= necessity.vit_a,
+                FoodModel.vit_b1 <= necessity.vit_b1,
+                FoodModel.vit_b2 <= necessity.vit_b2,
+                FoodModel.vit_b3 <= necessity.vit_b3,
+                FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).limit(number_data)
+
+            kecocokan_lauk = {}
+            kecocokan_sayur = {}
+
+            list_nama=['vit_a','vit_b1','vit_c']
+
+            for idx, number in enumerate(best_lauk):
+                kecocokan_lauk[best_lauk[idx].id] = {}
+                for value in list_nama:
+                    try:
+                        kecocokan_lauk[best_lauk[idx].id][value] = getattr(best_lauk[idx],value)/getattr(necessity,value)
+                    except:
+                        kecocokan_lauk[best_lauk[idx].id][value] = getattr(best_lauk[idx],value)
+
+            for idx, number in enumerate(best_sayur):
+                kecocokan_sayur[best_sayur[idx].id] = {}
+                for value in list_nama:
+                    try:
+                        kecocokan_sayur[best_sayur[idx].id][value] = getattr(best_sayur[idx],value)/getattr(necessity,value)
+                    except:
+                        kecocokan_sayur[best_sayur[idx].id][value] = getattr(best_sayur[idx],value)
+
+            total_kecocokan_lauk = {}
+            total_kecocokan_sayur = {}
+
+            for key, data in kecocokan_lauk.items():
+                total_kecocokan_lauk[key] = sum(data.values())
+
+            for key, data in kecocokan_sayur.items():
+                total_kecocokan_sayur[key] = sum(data.values())
+
+            bobot_rating_lauk = max(total_kecocokan_lauk.values()) - min(total_kecocokan_lauk.values()) / 2.5
+            bobot_rating_sayur = max(total_kecocokan_sayur.values()) - min(total_kecocokan_sayur.values()) / 2.5
+
+            
+
+            result_lauk = []
+            result_sayur = []
+
+            rekomendasi_bersama_lauk = []
+            rekomendasi_bersama_sayur = []
+
+
+            #
+            # GANTI number.protein -> number.rating
+            #
+
+            for identity, data in total_kecocokan_lauk.items():
+                for idx, number in enumerate(best_lauk):
+                    if best_lauk[idx].id == identity:
+                        rekomendasi = data + (bobot_rating_lauk * number.protein)
+                        rekomendasi_bersama_lauk.append(rekomendasi)
+                        result_lauk.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': number.image_filename})
+
+            for identity, data in total_kecocokan_sayur.items():
+                for idx, number in enumerate(best_sayur):
+                    if best_sayur[idx].id == identity:
+                        rekomendasi = data + (bobot_rating_sayur * number.protein)
+                        rekomendasi_bersama_sayur.append(rekomendasi)
+                        result_sayur.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': number.image_filename})
+                        
+
+            max_rekomendasi_lauk = max(rekomendasi_bersama_lauk)
+            max_rekomendasi_sayur = max(rekomendasi_bersama_sayur)
+
+
+            for data in result_lauk:
+                for key, value in data.items():
+                    if key == 'rekomendasi':
+                        # data[key] = data[key]/max_rekomendasi_lauk*10
+                        data[key] = data[key]
+
+            for data in result_sayur:
+                for key, value in data.items():
+                    if key == 'rekomendasi':
+                        # data[key] = data[key]/max_rekomendasi_sayur*10
+                        data[key] = data[key]
+
+            return jsonify({'lauk':result_lauk},{'sayur':result_sayur})
+
+        elif option == '2':
+            necessity = UserNecessityModel.query.filter_by(user_id=_id).order_by(UserNecessityModel.id.desc()).first()
+            best_lauk = FoodModel.query.filter(and_(
+                calorie <= necessity.calorie,
+                protein <= necessity.protein,
+                fat <= necessity.fat,
+                carbohydrate <= necessity.carbohydrate,
+                fiber <= necessity.fiber,
+                calcium <= necessity.calcium,
+                phosphor <= necessity.phosphor,
+                iron <= necessity.iron,
+                sodium <= necessity.sodium,
+                potassium <= necessity.potassium,
+                copper <= necessity.copper,
+                zinc <= necessity.zinc,
+                vit_a <= necessity.vit_a,
+                vit_b1 <= necessity.vit_b1,
+                vit_b2 <= necessity.vit_b2,
+                vit_b3 <= necessity.vit_b3,
+                vit_c <= necessity.vit_c)).filter_by(food_type.like('lauk')).order_by(FoodModel.nutri_point.desc()).limit(num)
+            best_sayur = FoodModel.query.filter(and_(
+                calorie <= necessity.calorie,
+                protein <= necessity.protein,
+                fat <= necessity.fat,
+                carbohydrate <= necessity.carbohydrate,
+                fiber <= necessity.fiber,
+                calcium <= necessity.calcium,
+                phosphor <= necessity.phosphor,
+                iron <= necessity.iron,
+                sodium <= necessity.sodium,
+                potassium <= necessity.potassium,
+                copper <= necessity.copper,
+                zinc <= necessity.zinc,
+                vit_a <= necessity.vit_a,
+                vit_b1 <= necessity.vit_b1,
+                vit_b2 <= necessity.vit_b2,
+                vit_b3 <= necessity.vit_b3,
+                vit_c <= necessity.vit_c)).filter_by(food_type.like('sayur')).order_by(FoodModel.nutri_point.desc()).limit(num)
+            
+
+            # for item in best_lauk:
+            #     # append skor kecocokan ke tiap model
+            
+            # data_lauk = FoodSchema().dump(best_lauk)
+            # data_sayur = FoodSchema().dump(best_sayur)
+            # return jsonify(data_lauk, data_sayur)
+        else:
+            return jsonify({'message': 'Please enter option!'})
+        
+        
         pass
 
     def post(cls):
@@ -328,7 +504,6 @@ class FoodRecommendation(Resource):
 
 
 class FoodNecessity(Resource):
-    @jwt_refresh_token_required
     def get(self):
         # ?id=...
         # Food Nutrition necessity in one day.
@@ -357,7 +532,23 @@ class FoodNecessity(Resource):
         today_date = date.today()
 
         user_age = today_date.year - user_date.year - ((today_date.month, today_date.day) < (user_date.month, user_date.day))
-
+        target_calorie = 0
+        target_protein = 0
+        target_fat = 0
+        target_carbohydrate = 0
+        target_fiber = 0
+        target_calcium = 0
+        target_phosphor = 0
+        target_iron = 0
+        target_sodium = 0
+        target_potassium = 0
+        target_copper = 0
+        target_zinc = 0
+        target_vit_a = 0
+        target_vit_b1 = 0
+        target_vit_b2 = 0
+        target_vit_b3 = 0
+        target_vit_c = 0
         if user_gender == 'male':
             if user_activity_level == 'sedentary':
                     target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) + 5 ) * 1.2
@@ -377,27 +568,20 @@ class FoodNecessity(Resource):
             elif user_activity_level == 'high':
                     target_calorie = ( (10 * user_weight) + (6.25 * user_height_cm) - (5 * user_age) - 161 ) * 1.9
 
-        if user_maintain_weight == 0:
-            target_calorie_min = target_calorie - 0
-            target_calorie_max = target_calorie + 0
-        elif user_maintain_weight == 1:
-            target_calorie_min = target_calorie - 250
-            target_calorie_max = target_calorie
-        elif user_maintain_weight == 2:
-            target_calorie_min = target_calorie - 500
-            target_calorie_max = target_calorie
-        elif user_maintain_weight == 3:
-            target_calorie_min = target_calorie - 750
-            target_calorie_max = target_calorie
-        elif user_maintain_weight == 4:
-            target_calorie_min = target_calorie
-            target_calorie_max = target_calorie + 250
-        elif user_maintain_weight == 5:
-            target_calorie_min = target_calorie
-            target_calorie_max = target_calorie + 500
-        elif user_maintain_weight == 6:
-            target_calorie_min = target_calorie
-            target_calorie_max = target_calorie + 750
+        if user_maintain_weight == 0: # mempertahankan
+            target_calorie = target_calorie 
+        elif user_maintain_weight == 1: # diet ringan
+            target_calorie = target_calorie - 250
+        elif user_maintain_weight == 2: # diet medium
+            target_calorie = target_calorie - 500
+        elif user_maintain_weight == 3: # diet keras
+            target_calorie = target_calorie - 750
+        elif user_maintain_weight == 4: # tambah bb ringan
+            target_calorie = target_calorie + 250
+        elif user_maintain_weight == 5: # tambah bb medium
+            target_calorie = target_calorie + 500
+        elif user_maintain_weight == 6: # tambah bb banyak bet
+            target_calorie = target_calorie + 750
 
         if user_gender == 'male':
             if user_age <= 12:
@@ -646,8 +830,7 @@ class FoodNecessity(Resource):
 
         db.session.add(UserNecessityModel(
             user_id = user_data.id,
-            calorie_min = round(target_calorie_min, 1),
-            calorie_max = round(target_calorie_max, 1),
+            calorie = round(target_calorie, 1),
             protein = round(target_protein, 1),
             fat = round(target_fat, 1),
             carbohydrate = round(target_carbohydrate, 1),
@@ -670,15 +853,14 @@ class FoodNecessity(Resource):
         try:
             db.session.commit()
         except:
-            return {'message', 'Error database!'}
+            return {'message': 'Error database!'}
 
         return jsonify({
             'user_id': user_data.id,
             'user_gender': user_gender,
             'user_age': user_age,
             'bmi': float(round(bmi, 1)),
-            'calorie_min': round(target_calorie_min, 1),
-            'calorie_max': round(target_calorie_max, 1),
+            'calorie': round(target_calorie, 1),
             'protein': round(target_protein, 1),
             'fat': round(target_fat, 1),
             'carbohydrate': round(target_carbohydrate, 1),

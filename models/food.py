@@ -172,7 +172,7 @@ class FoodModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     name = db.Column('name', db.String(80), nullable=False)
-    food_type = db.Column('food_type', db.String(10))
+    food_type = db.Column('food_type', db.String(50))
     food_ingredients = db.Column('food_ingredients', db.Text)
     food_ingredients = db.relationship(
         'FoodIngredientsModel',
@@ -214,6 +214,7 @@ class FoodModel(db.Model):
     vit_b2 = db.Column('vit_b2', db.Float) # vit b2, miligram
     vit_b3 = db.Column('vit_b3', db.Float) # vit b3, miligram
     vit_c = db.Column('vit_c', db.Float) # miligram
+    rating = db.Column('rating', db.Integer)
     tags = db.Column('tags', db.Text)
     image_filename = db.Column('image_filename', db.Text)
     nutri_point = db.Column('nutri_point', db.Float)
