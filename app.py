@@ -5,7 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
-from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_mail import Mail
 
@@ -44,12 +43,30 @@ db.init_app(app)
 
 migrate = Migrate(app, db)
 
-admin = Admin(app)
-
 mail.init_app(app)
 
-# import models
+
 from models import *
+
+import flask_admin as admin
+
+from flask_admin.contrib.sqla import ModelView
+
+
+class FoodModelAdmin(ModelView):
+    form_columns = ('name','food_type','duration','difficulty','tags',)
+    column_searchable_list = ('name',)
+    column_exclude_list = ('serving','image_filename','rating','nutri_point')
+
+    inline_models = (FoodInstructionsModel,)
+
+    create_template = 'food/admin_add_food_interface.html'
+    def __init__(self):
+        super(FoodModelAdmin, self).__init__(FoodModel, db.session, name='Food')
+
+admin = admin.Admin(app, template_mode='bootstrap3')
+admin.add_view(FoodModelAdmin())
+
 
 manager = Manager(app)
 manager.add_command('db', MigrateCommand)
@@ -147,6 +164,7 @@ api.add_resource(FoodRecipe, '/api/food/recipe')
 api.add_resource(FoodHistory, '/api/food/history')
 api.add_resource(FoodNecessity, '/api/food/necessity')
 api.add_resource(FoodRecommendation, '/api/food/recommendation')
+api.add_resource(FoodRating, '/api/food/rating')
 # belum finish: necessity
 
 # resource related to addiction

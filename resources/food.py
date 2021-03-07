@@ -1,5 +1,6 @@
 import json
 import os
+from sqlalchemy.orm import load_only
 from os.path import join, dirname, realpath
 from decimal import Decimal
 from flask import request, jsonify, flash, redirect, current_app, render_template, make_response
@@ -31,7 +32,8 @@ from models.food import (
     FoodAnalyticsModel,
     FoodIngredientsInfoModel,
     FoodInstructionsModel,
-    FoodHelperModel
+    FoodHelperModel,
+    FoodRatingModel
 )
 from models.assoc import (
     food_ingredients_assoc
@@ -54,7 +56,7 @@ from sqlalchemy import and_
 class AddFood(Resource):
     def get(self):
         headers = {'Content-Type': 'text/html'}
-        return make_response(render_template('food/add_food_interface.html'),200,headers)
+        return redirect('/admin/foodmodel/')
     def post(self):
         req = request.form.to_dict()
         food_name = req['food_name']
@@ -321,12 +323,13 @@ class FoodRecommendation(Resource):
     @classmethod
     def get(self):
         # send json user id
-        # ?option=...&id=...&num=...
+        # ?option=...&id=...&type=...&page=...
         # 1=initial recommendation, 2=by number of food
+        # type 1=pokok, type 2=lauk, type 3=sayur
         _id = request.args.get('id')
-        num = request.args.get('num')
         option = request.args.get('option')
-        number_data = 20
+        page = request.args.get('page', 1, int)
+        food_type = request.args.get('type')
         if option == '1':
             necessity = UserNecessityModel.query.filter_by(user_id=_id).order_by(UserNecessityModel.id.desc()).first()
             pokok = FoodModel.query.filter_by(name='Nasi Putih').first()
@@ -347,7 +350,7 @@ class FoodRecommendation(Resource):
                 FoodModel.vit_b1 <= necessity.vit_b1,
                 FoodModel.vit_b2 <= necessity.vit_b2,
                 FoodModel.vit_b3 <= necessity.vit_b3,
-                FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).limit(number_data)
+                FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).limit(20)
             best_sayur = FoodModel.query.filter(and_(
                 # FoodModel.calorie <= necessity.calorie,
                 # FoodModel.protein <= necessity.protein,
@@ -365,7 +368,7 @@ class FoodRecommendation(Resource):
                 FoodModel.vit_b1 <= necessity.vit_b1,
                 FoodModel.vit_b2 <= necessity.vit_b2,
                 FoodModel.vit_b3 <= necessity.vit_b3,
-                FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).limit(number_data)
+                FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).limit(20)
 
             kecocokan_lauk = {}
             kecocokan_sayur = {}
@@ -447,60 +450,234 @@ class FoodRecommendation(Resource):
             return jsonify({'lauk':result_lauk},{'sayur':result_sayur})
 
         elif option == '2':
+            list_nama=['vit_a','vit_b1','vit_c']
             necessity = UserNecessityModel.query.filter_by(user_id=_id).order_by(UserNecessityModel.id.desc()).first()
-            best_lauk = FoodModel.query.filter(and_(
-                calorie <= necessity.calorie,
-                protein <= necessity.protein,
-                fat <= necessity.fat,
-                carbohydrate <= necessity.carbohydrate,
-                fiber <= necessity.fiber,
-                calcium <= necessity.calcium,
-                phosphor <= necessity.phosphor,
-                iron <= necessity.iron,
-                sodium <= necessity.sodium,
-                potassium <= necessity.potassium,
-                copper <= necessity.copper,
-                zinc <= necessity.zinc,
-                vit_a <= necessity.vit_a,
-                vit_b1 <= necessity.vit_b1,
-                vit_b2 <= necessity.vit_b2,
-                vit_b3 <= necessity.vit_b3,
-                vit_c <= necessity.vit_c)).filter_by(food_type.like('lauk')).order_by(FoodModel.nutri_point.desc()).limit(num)
-            best_sayur = FoodModel.query.filter(and_(
-                calorie <= necessity.calorie,
-                protein <= necessity.protein,
-                fat <= necessity.fat,
-                carbohydrate <= necessity.carbohydrate,
-                fiber <= necessity.fiber,
-                calcium <= necessity.calcium,
-                phosphor <= necessity.phosphor,
-                iron <= necessity.iron,
-                sodium <= necessity.sodium,
-                potassium <= necessity.potassium,
-                copper <= necessity.copper,
-                zinc <= necessity.zinc,
-                vit_a <= necessity.vit_a,
-                vit_b1 <= necessity.vit_b1,
-                vit_b2 <= necessity.vit_b2,
-                vit_b3 <= necessity.vit_b3,
-                vit_c <= necessity.vit_c)).filter_by(food_type.like('sayur')).order_by(FoodModel.nutri_point.desc()).limit(num)
-            
+            if food_type == '1': # pokok
+                pokok = FoodModel.query.filter_by(name='Nasi Putih').first()
+            elif food_type == '2': # lauk
+                best_lauk = FoodModel.query.filter(and_(
+                    # FoodModel.calorie <= necessity.calorie,
+                    # FoodModel.protein <= necessity.protein,
+                    # FoodModel.fat <= necessity.fat,
+                    # FoodModel.carbohydrate <= necessity.carbohydrate,
+                    # FoodModel.fiber <= necessity.fiber,
+                    # FoodModel.calcium <= necessity.calcium,
+                    # FoodModel.phosphor <= necessity.phosphor,
+                    # FoodModel.iron <= necessity.iron,
+                    # FoodModel.sodium <= necessity.sodium,
+                    # FoodModel.potassium <= necessity.potassium,
+                    # FoodModel.copper <= necessity.copper,
+                    # FoodModel.zinc <= necessity.zinc,
+                    FoodModel.vit_a <= necessity.vit_a,
+                    FoodModel.vit_b1 <= necessity.vit_b1,
+                    FoodModel.vit_b2 <= necessity.vit_b2,
+                    FoodModel.vit_b3 <= necessity.vit_b3,
+                    FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).paginate(page=page, error_out=True, max_per_page=10)
+        
+                kecocokan_lauk = {}
+                
+                for idx, number in enumerate(best_lauk.items):
+                    kecocokan_lauk[best_lauk.items[idx].id] = {}
+                for value in list_nama:
+                    try:
+                        kecocokan_lauk[best_lauk.items[idx].id][value] = getattr(best_lauk.items[idx],value)/getattr(necessity,value)
+                    except:
+                        kecocokan_lauk[best_lauk.items[idx].id][value] = getattr(best_lauk.items[idx],value)
 
-            # for item in best_lauk:
-            #     # append skor kecocokan ke tiap model
-            
-            # data_lauk = FoodSchema().dump(best_lauk)
-            # data_sayur = FoodSchema().dump(best_sayur)
-            # return jsonify(data_lauk, data_sayur)
+                total_kecocokan_lauk = {}
+
+                for key, data in kecocokan_lauk.items():
+                    total_kecocokan_lauk[key] = sum(data.values())
+
+                bobot_rating_lauk = max(total_kecocokan_lauk.values()) - min(total_kecocokan_lauk.values()) / 2.5
+
+                result_lauk = []
+
+                rekomendasi_bersama_lauk = []
+
+                #
+                # GANTI number.protein -> number.rating
+                #
+
+                for identity, data in total_kecocokan_lauk.items():
+                    for idx, number in enumerate(best_lauk.items):
+                        if best_lauk.items[idx].id == identity:
+                            rekomendasi = data + (bobot_rating_lauk * number.protein)
+                            rekomendasi_bersama_lauk.append(rekomendasi)
+                            result_lauk.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': number.image_filename})
+
+                max_rekomendasi_lauk = max(rekomendasi_bersama_lauk)
+                for data in result_lauk:
+                    for key, value in data.items():
+                        if key == 'rekomendasi':
+                            # data[key] = data[key]/max_rekomendasi_lauk*10
+                            data[key] = data[key]
+                            return jsonify({'lauk':result_lauk})
+
+            elif food_type == '3': # sayur
+                best_sayur = FoodModel.query.filter(and_(
+                    # FoodModel.calorie <= necessity.calorie,
+                    # FoodModel.protein <= necessity.protein,
+                    # FoodModel.fat <= necessity.fat,
+                    # FoodModel.carbohydrate <= necessity.carbohydrate,
+                    # FoodModel.fiber <= necessity.fiber,
+                    # FoodModel.calcium <= necessity.calcium,
+                    # FoodModel.phosphor <= necessity.phosphor,
+                    # FoodModel.iron <= necessity.iron,
+                    # FoodModel.sodium <= necessity.sodium,
+                    # FoodModel.potassium <= necessity.potassium,
+                    # FoodModel.copper <= necessity.copper,
+                    # FoodModel.zinc <= necessity.zinc,
+                    FoodModel.vit_a <= necessity.vit_a,
+                    FoodModel.vit_b1 <= necessity.vit_b1,
+                    FoodModel.vit_b2 <= necessity.vit_b2,
+                    FoodModel.vit_b3 <= necessity.vit_b3,
+                    FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).paginate(page=page, error_out=True, max_per_page=10)
+
+                kecocokan_sayur = {}
+                
+                for idx, number in enumerate(best_sayur.items):
+                    kecocokan_sayur[best_sayur.items[idx].id] = {}
+                    for value in list_nama:
+                        try:
+                            kecocokan_sayur[best_sayur.items[idx].id][value] = getattr(best_sayur.items[idx],value)/getattr(necessity,value)
+                        except:
+                            kecocokan_sayur[best_sayur.items[idx].id][value] = getattr(best_sayur.items[idx],value)
+        
+                total_kecocokan_sayur = {}
+
+                for key, data in kecocokan_sayur.items():
+                    total_kecocokan_sayur[key] = sum(data.values())
+
+                bobot_rating_sayur = max(total_kecocokan_sayur.values()) - min(total_kecocokan_sayur.values()) / 2.5
+
+                result_sayur = []
+
+                rekomendasi_bersama_sayur = []
+
+                #
+                # GANTI number.protein -> number.rating
+                #
+
+                for identity, data in total_kecocokan_sayur.items():
+                    for idx, number in enumerate(best_sayur.items):
+                        if best_sayur.items[idx].id == identity:
+                            rekomendasi = data + (bobot_rating_sayur * number.protein)
+                            rekomendasi_bersama_sayur.append(rekomendasi)
+                            result_sayur.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': number.image_filename})
+                              
+                max_rekomendasi_sayur = max(rekomendasi_bersama_sayur)
+
+                for data in result_sayur:
+                    for key, value in data.items():
+                        if key == 'rekomendasi':
+                            # data[key] = data[key]/max_rekomendasi_sayur*10
+                            data[key] = data[key]
+
+                return jsonify({'sayur':result_sayur})
+            else:
+                return jsonify({'message': 'Please enter food type!'})
         else:
             return jsonify({'message': 'Please enter option!'})
-        
-        
-        pass
 
-    def post(cls):
+    def post(self):
         # send foods that have eaten, deduct value from necessity table
         pass
+
+class FoodRating(Resource):
+    @classmethod
+    def post(self): #?id=...&food=...&rating=...
+        user_id = request.args.get('id')
+        food_id = int(request.args.get('food'))
+        rating = int(request.args.get('rating'))
+        ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+
+        existing_rating = FoodRatingModel.query.filter(and_(FoodRatingModel.user_id == user_id,FoodRatingModel.food_id == food_id)).first()
+
+        if rating == 0:
+            return jsonify({'message': "Don't put zero"})
+
+        if existing_rating is not None:
+            #hitung rating
+            food_rating = FoodRatingModel.query.filter_by(food_id=food_id).all()
+
+            food_to_change = FoodModel.query.filter_by(id=food_id).options(load_only('rating')).first()
+            print(existing_rating)
+            count_rating = 0
+
+            rating_food = 0
+            for item in food_rating:
+                if item.id != user_id:
+                    rating_food = rating + item.rating
+                    count_rating += 1
+
+            rating_food = rating_food / count_rating
+            rating_food = round(rating, 1)
+            
+            #input db
+            existing_rating.rating = rating
+            food_to_change.rating = rating_food
+            
+            try:
+                db.session.commit()
+                return jsonify({'message': 'Success'})
+            except:
+                return jsonify({'message': 'Error database 4'})
+
+            return None
+
+        elif existing_rating is None:
+            #hitung rating
+            food = FoodRatingModel.query.filter_by(food_id=food_id).all()
+
+            food_to_change = FoodModel.query.filter_by(id=food_id).options(load_only('rating')).first()
+            
+            rating_food = rating
+            count_rating_food = 1
+
+            for item in food:
+                rating_food = rating_food + item.rating
+                count_rating_food += 1
+            
+            rating_food = rating_food / count_rating_food
+            rating_food = round(rating_food, 1)
+
+            food_to_change.rating = rating_food
+
+            db.session.add(FoodRatingModel(
+                user_id = user_id,
+                food_id = food_id,
+                rating = rating,
+                ip_address = ip_address
+            ))
+
+            try:
+                db.session.commit()
+                return jsonify({'message': 'Success'})
+            except:
+                return jsonify({'message': 'Error database 5'})
+        else:
+            return jsonify({'message': 'Error database 6'})
+    
+    @classmethod
+    def get(self): #?food=...
+        food_id = request.args.get('food')
+
+        try:
+            food = FoodRatingModel.query(func.avg(FoodRatingModel.rating)).filter_by(food_id=food_id)
+        except:
+            return jsonify({'message': 'Error database'})
+        
+        # rating = 0
+        # count_rating = 0
+        # for item in food:
+        #     rating = rating + food.rating
+        #     count_rating + 1
+    
+        # rating = rating / count_rating
+        # rating = round(rating, 1)
+
+        return jsonify({'food_id': food_id, 'rating': food})
 
 
 class FoodNecessity(Resource):
@@ -890,6 +1067,7 @@ class FoodDetail(Resource):
             _id = request.args.get('id')
             food_detail = FoodModel.find_by_id(_id)
             data = FoodSchema().dump(food_detail)
+            print(food_detail.rating)
             return jsonify(data)
         elif option == '2':
             _id = request.args.get('id')

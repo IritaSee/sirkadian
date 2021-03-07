@@ -6,6 +6,8 @@ from models.assoc import (
     trending_food_assoc
 )
 import json
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.sql import func
 
 class FoodIngredientsModel(db.Model):
     __tablename__ = 'food_ingredients'
@@ -32,6 +34,9 @@ class FoodIngredientsModel(db.Model):
     vit_c = db.Column('vit_c', db.Float) # miligram
     ing_type = db.Column('ing_type', db.String(20)) # mentah/olahan
     food_group = db.Column('food_group', db.String(20)) # buah/sayur/bumbu/dsb
+
+    def __repr__(self):
+        return self.name
 
     def json(self):
         return {
@@ -100,6 +105,9 @@ class FoodIngredientsInfoModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     ingredients_info = db.Column('ingredients_info', db.Text)
+
+    def __repr__(self):
+        return self.ingredients_info
 
     def json(self):
         return {
@@ -217,38 +225,8 @@ class FoodModel(db.Model):
     rating = db.Column('rating', db.Integer)
     tags = db.Column('tags', db.Text)
     image_filename = db.Column('image_filename', db.Text)
+    rating = db.Column('rating', db.Float)
     nutri_point = db.Column('nutri_point', db.Float)
-
-    def json(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'food_type' : self.food_type,
-            'food_ingredients' : self.food_ingredients,
-            'food_ingredient_instructions' : self.food_ingredient_instructions,
-            'food_instructions' : self.food_instructions,
-            'serving' : self.serving,
-            'difficulty' : self.difficulty,
-            'calorie' : self.calorie,
-            'protein' : self.protein,
-            'fat' : self.fat,
-            'carbohydrate' : self.carbohydrate,
-            'fiber' : self.fiber,
-            'calcium' : self.calcium,
-            'phosphor' : self.phosphor,
-            'iron' : self.iron,
-            'sodium' : self.sodium,
-            'potassium' : self.potassium,
-            'copper' : self.copper,
-            'zinc' : self.zinc,
-            'vit_a' : self.vit_a,
-            'vit_b1' : self.vit_b1,
-            'vit_b2' : self.vit_b2,
-            'vit_b3' : self.vit_b3,
-            'vit_c' : self.vit_c,
-            'tags' : self.tags,
-            'image_filename' : self.image_filename
-        }
 
     def save_to_db(self):
         db.session.add(self)
@@ -455,3 +433,13 @@ class FoodAnalyticsModel(db.Model):
     @classmethod
     def find_all(cls):
         return cls.query.all()
+
+class FoodRatingModel(db.Model):
+    __tablename__ = 'food_rating'
+
+    id = db.Column('id', db.Integer, primary_key=True)
+    user_id = db.Column('user', db.Integer, db.ForeignKey('users.id'))
+    food_id = db.Column('food', db.Integer, db.ForeignKey('food.id'))
+    rating = db.Column('rating', db.Integer)
+    ip_address = db.Column('ip_address', db.String(18))
+    created_at = db.Column('created_at', db.DateTime, default=db.func.now(), nullable=False)
