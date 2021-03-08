@@ -1,7 +1,5 @@
--- app.py migrate
--- app.py revision -m first_init
--- paste this on upgrade()
--- op.execute("""
+
+op.execute("""
 INSERT INTO `sirkadian`.`food_max` (`id`) VALUES ('1');
 SELECT MAX(calorie) FROM food INTO @max_calorie;
 SELECT MAX(protein) FROM food INTO @max_protein;
@@ -46,7 +44,6 @@ UPDATE food
 SET nutri_point=(((calorie/@max_calorie)+(protein/@max_protein)+(fat/@max_fat)+(carbohydrate/@max_carbohydrate)+(fiber/@max_fiber)+(calcium/@max_calcium)+(phosphor/@max_phosphor)+(iron/@max_iron)+(sodium/@max_sodium)+(potassium/@max_potassium)+(copper/@max_copper)+(zinc/@max_zinc)+(vit_a/@max_vit_a)+(vit_b1/@max_vit_b1)+(vit_b2/@max_vit_b2)+(vit_b3/@max_vit_b3)+(vit_c/@max_vit_c))*100/17);
 SET @food_need_update := 0;
 
--- HAPUS DELIMITER //
 DELIMITER //
 CREATE TRIGGER before_food_helper_insert
 BEFORE INSERT
@@ -241,9 +238,7 @@ ELSE
 	INSERT INTO food VALUE(NULL,NEW.name,NEW.food_type,NEW.duration,NEW.serving,NEW.difficulty,NEW.calorie,NEW.protein,NEW.fat,NEW.carbohydrate,NEW.fiber,NEW.calcium,NEW.phosphor,NEW.iron,NEW.sodium,NEW.potassium,NEW.copper,NEW.zinc,NEW.vit_a,NEW.vit_b1,NEW.vit_b2,NEW.vit_b3,NEW.vit_c,NEW.tags,NEW.image_filename,(((calorie/@max_calorie)+(protein/@max_protein)+(fat/@max_fat)+(carbohydrate/@max_carbohydrate)+(fiber/@max_fiber)+(calcium/@max_calcium)+(phosphor/@max_phosphor)+(iron/@max_iron)+(sodium/@max_sodium)+(potassium/@max_potassium)+(copper/@max_copper)+(zinc/@max_zinc)+(vit_a/@max_vit_a)+(vit_b1/@max_vit_b1)+(vit_b2/@max_vit_b2)+(vit_b3/@max_vit_b3)+(vit_c/@max_vit_c))*100/17),NULL);
 END IF;
 END//
--- insert coma(,) after END
 
--- HAPUS DELIMITER //
 DELIMITER //
 CREATE TRIGGER before_food_max_update
 BEFORE UPDATE
@@ -271,5 +266,4 @@ UPDATE food
 SET nutri_point=(((calorie/NEW.max_calorie)+(protein/NEW.max_protein)+(fat/NEW.max_fat)+(carbohydrate/NEW.max_carbohydrate)+(fiber/NEW.max_fiber)+(calcium/NEW.max_calcium)+(phosphor/NEW.max_phosphor)+(iron/NEW.max_iron)+(sodium/NEW.max_sodium)+(potassium/NEW.max_potassium)+(copper/NEW.max_copper)+(zinc/NEW.max_zinc)+(vit_a/NEW.max_vit_a)+(vit_b1/NEW.max_vit_b1)+(vit_b2/NEW.max_vit_b2)+(vit_b3/NEW.max_vit_b3)+(vit_c/NEW.max_vit_c))*100/17);
 SET @food_need_update := 0;
 END//
--- insert coma(,) after END
--- """)
+""")

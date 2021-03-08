@@ -42,6 +42,13 @@ trending_food_assoc = db.Table('trending_food_assoc', db.Model.metadata,
     db.Column('created_at', db.DateTime, default=db.func.now())
 )
 
+allergy_ingredients_assoc = db.Table('allergy_ingredients_assoc', db.Model.metadata,
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('allergy_id', db.Integer, db.ForeignKey('allergy.id')),
+    db.Column('ingredients_id', db.Integer, db.ForeignKey('food_ingredients.id')),
+    db.Column('created_at', db.DateTime, default=db.func.now())
+)
+
 sport_history_assoc = db.Table('sport_history_assoc', db.Model.metadata,
     db.Column('id', db.Integer, primary_key=True),
     db.Column('history_id', db.Integer, db.ForeignKey('user_sport_history.id')),

@@ -7,6 +7,12 @@ class AllergyModel(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     name = db.Column('name', db.String(80), nullable=False)
+    ingredients = db.relationship(
+        'FoodIngredientsModel',
+        secondary=allergy_ingredients_assoc,
+        backref="allergy_ingredients",
+        lazy='joined'
+    )
     
     def save_to_db(self):
         db.session.add(self)
