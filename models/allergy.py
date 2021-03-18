@@ -2,6 +2,10 @@ from db import db
 
 import json
 
+from models.assoc import (
+    allergy_ingredients_assoc
+)
+
 class AllergyModel(db.Model):
     __tablename__ = 'allergy'
 
@@ -13,6 +17,9 @@ class AllergyModel(db.Model):
         backref="allergy_ingredients",
         lazy='joined'
     )
+
+    def __repr__(self):
+        return self.name
     
     def save_to_db(self):
         db.session.add(self)

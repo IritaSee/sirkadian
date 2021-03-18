@@ -23,7 +23,8 @@ from models.user import (
 )
 from models.user_history import (
     UserFoodHistoryModel,
-    UserHealthHistoryModel
+    UserHealthHistoryModel,
+    UserAllergyHistoryModel
 )
 from models.food import (
     FoodModel,
@@ -36,6 +37,9 @@ from models.food import (
     FoodRatingModel
 )
 from models.assoc import (
+    food_ingredients_assoc,
+    allergy_history_assoc,
+    allergy_ingredients_assoc,
     food_ingredients_assoc
 )
 from models.enum import (
@@ -47,6 +51,7 @@ from models.schemas import (
     FoodAnalyticsSchema,
     UserFoodHistorySchema
 )
+from models.allergy import AllergyModel
 from datetime import (
     date
 )
@@ -319,6 +324,57 @@ class FoodTrending(Resource):
         else:
             return jsonify({'message': 'Enter valid option'})
 
+class Testing(Resource):
+    @classmethod
+    def get(self):
+        _id = request.args.get('id')
+        option = request.args.get('option')
+        page = request.args.get('page', 1, int)
+        food_type = request.args.get('type')
+
+        rs = db.session.execute('SELECT ingredients_id FROM allergy_ingredients_assoc WHERE allergy_id = (SELECT allergy.id FROM allergy INNER JOIN allergy_history_assoc ON allergy.id = allergy_history_assoc.allergy_id AND allergy_history_assoc.id = %s)'%_id)
+        ingredients = []
+        for item in rs:
+            ingredients.append(item[0])
+
+        print(ingredients)
+        
+        necessity = UserNecessityModel.query.filter_by(user_id=_id).order_by(UserNecessityModel.id.desc()).first()
+        pokok = FoodModel.query.filter_by(name='Nasi Putih').first()
+
+
+    
+        subquery1 = db.session.query(AllergyModel.id).join(allergy_history_assoc, and_(allergy_history_assoc.c.id == _id)).subquery()
+        
+        subquery2 = db.session.query(allergy_ingredients_assoc.c.ingredients_id).filter(allergy_ingredients_assoc.c.allergy_id.in_(subquery1)).subquery()
+
+        subquery3 = db.session.query(food_ingredients_assoc.c.food_id).filter(food_ingredients_assoc.c.ingredients_id.notin_(subquery2)).subquery()
+        
+        coba_coba = FoodModel.query.filter(FoodModel.id.in_(subquery3)).filter(and_(
+                # FoodModel.calorie/FoodModel.serving <= necessity.calorie,
+                # FoodModel.protein/FoodModel.serving <= necessity.protein,
+                # FoodModel.fat/FoodModel.serving <= necessity.fat,
+                # FoodModel.carbohydrate/FoodModel.serving <= necessity.carbohydrate,
+                # FoodModel.fiber/FoodModel.serving <= necessity.fiber,
+                # FoodModel.calcium/FoodModel.serving <= necessity.calcium,
+                # FoodModel.phosphor/FoodModel.serving <= necessity.phosphor,
+                # FoodModel.iron/FoodModel.serving <= necessity.iron,
+                # FoodModel.sodium/FoodModel.serving <= necessity.sodium,
+                # FoodModel.potassium/FoodModel.serving <= necessity.potassium,
+                # FoodModel.copper/FoodModel.serving <= necessity.copper,
+                # FoodModel.zinc/FoodModel.serving <= necessity.zinc,
+                FoodModel.vit_a/FoodModel.serving <= necessity.vit_a,
+                FoodModel.vit_b1/FoodModel.serving <= necessity.vit_b1,
+                FoodModel.vit_b2/FoodModel.serving <= necessity.vit_b2,
+                FoodModel.vit_b3/FoodModel.serving <= necessity.vit_b3,
+                FoodModel.vit_c/FoodModel.serving <= necessity.vit_c)).filter(FoodModel.food_type.like('lauk')).order_by(FoodModel.nutri_point.desc()).limit(20).all()
+        
+            
+
+        # baru_baru = coba_coba.query.filter(FoodModel.food_ingredients[0].id.notin_(ingredients[0]))
+        # print(FoodModel.find_by_id(1).food_ingredients.id)
+        print(coba_coba)
+
 class FoodRecommendation(Resource):
     @classmethod
     def get(self):
@@ -334,41 +390,41 @@ class FoodRecommendation(Resource):
             necessity = UserNecessityModel.query.filter_by(user_id=_id).order_by(UserNecessityModel.id.desc()).first()
             pokok = FoodModel.query.filter_by(name='Nasi Putih').first()
             best_lauk = FoodModel.query.filter(and_(
-                # FoodModel.calorie <= necessity.calorie,
-                # FoodModel.protein <= necessity.protein,
-                # FoodModel.fat <= necessity.fat,
-                # FoodModel.carbohydrate <= necessity.carbohydrate,
-                # FoodModel.fiber <= necessity.fiber,
-                # FoodModel.calcium <= necessity.calcium,
-                # FoodModel.phosphor <= necessity.phosphor,
-                # FoodModel.iron <= necessity.iron,
-                # FoodModel.sodium <= necessity.sodium,
-                # FoodModel.potassium <= necessity.potassium,
-                # FoodModel.copper <= necessity.copper,
-                # FoodModel.zinc <= necessity.zinc,
-                FoodModel.vit_a <= necessity.vit_a,
-                FoodModel.vit_b1 <= necessity.vit_b1,
-                FoodModel.vit_b2 <= necessity.vit_b2,
-                FoodModel.vit_b3 <= necessity.vit_b3,
-                FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).limit(20)
+                # FoodModel.calorie/FoodModel.serving <= necessity.calorie,
+                # FoodModel.protein/FoodModel.serving <= necessity.protein,
+                # FoodModel.fat/FoodModel.serving <= necessity.fat,
+                # FoodModel.carbohydrate/FoodModel.serving <= necessity.carbohydrate,
+                # FoodModel.fiber/FoodModel.serving <= necessity.fiber,
+                # FoodModel.calcium/FoodModel.serving <= necessity.calcium,
+                # FoodModel.phosphor/FoodModel.serving <= necessity.phosphor,
+                # FoodModel.iron/FoodModel.serving <= necessity.iron,
+                # FoodModel.sodium/FoodModel.serving <= necessity.sodium,
+                # FoodModel.potassium/FoodModel.serving <= necessity.potassium,
+                # FoodModel.copper/FoodModel.serving <= necessity.copper,
+                # FoodModel.zinc/FoodModel.serving <= necessity.zinc,
+                FoodModel.vit_a/FoodModel.serving <= necessity.vit_a,
+                FoodModel.vit_b1/FoodModel.serving <= necessity.vit_b1,
+                FoodModel.vit_b2/FoodModel.serving <= necessity.vit_b2,
+                FoodModel.vit_b3/FoodModel.serving <= necessity.vit_b3,
+                FoodModel.vit_c/FoodModel.serving <= necessity.vit_c)).filter(FoodModel.food_type.like('lauk')).order_by(FoodModel.nutri_point.desc()).limit(20)
             best_sayur = FoodModel.query.filter(and_(
-                # FoodModel.calorie <= necessity.calorie,
-                # FoodModel.protein <= necessity.protein,
-                # FoodModel.fat <= necessity.fat,
-                # FoodModel.carbohydrate <= necessity.carbohydrate,
-                # FoodModel.fiber <= necessity.fiber,
-                # FoodModel.calcium <= necessity.calcium,
-                # FoodModel.phosphor <= necessity.phosphor,
-                # FoodModel.iron <= necessity.iron,
-                # FoodModel.sodium <= necessity.sodium,
-                # FoodModel.potassium <= necessity.potassium,
-                # FoodModel.copper <= necessity.copper,
-                # FoodModel.zinc <= necessity.zinc,
-                FoodModel.vit_a <= necessity.vit_a,
-                FoodModel.vit_b1 <= necessity.vit_b1,
-                FoodModel.vit_b2 <= necessity.vit_b2,
-                FoodModel.vit_b3 <= necessity.vit_b3,
-                FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).limit(20)
+                # FoodModel.calorie/FoodModel.serving <= necessity.calorie,
+                # FoodModel.protein/FoodModel.serving <= necessity.protein,
+                # FoodModel.fat/FoodModel.serving <= necessity.fat,
+                # FoodModel.carbohydrate/FoodModel.serving <= necessity.carbohydrate,
+                # FoodModel.fiber/FoodModel.serving <= necessity.fiber,
+                # FoodModel.calcium/FoodModel.serving <= necessity.calcium,
+                # FoodModel.phosphor/FoodModel.serving <= necessity.phosphor,
+                # FoodModel.iron/FoodModel.serving <= necessity.iron,
+                # FoodModel.sodium/FoodModel.serving <= necessity.sodium,
+                # FoodModel.potassium/FoodModel.serving <= necessity.potassium,
+                # FoodModel.copper/FoodModel.serving <= necessity.copper,
+                # FoodModel.zinc/FoodModel.serving <= necessity.zinc,
+                FoodModel.vit_a/FoodModel.serving <= necessity.vit_a,
+                FoodModel.vit_b1/FoodModel.serving <= necessity.vit_b1,
+                FoodModel.vit_b2/FoodModel.serving <= necessity.vit_b2,
+                FoodModel.vit_b3/FoodModel.serving <= necessity.vit_b3,
+                FoodModel.vit_c/FoodModel.serving <= necessity.vit_c)).filter(FoodModel.food_type.like('sayur')).order_by(FoodModel.nutri_point.desc()).limit(20)
 
             kecocokan_lauk = {}
             kecocokan_sayur = {}

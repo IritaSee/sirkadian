@@ -207,6 +207,8 @@ class UserAllergyHistoryModel(db.Model):
     ip_address = db.Column('ip_address', db.String(18))
     created_at = db.Column('created_at', db.DateTime, default=db.func.now())
 
+    def __repr__(self):
+        return str(self.user_id)
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()

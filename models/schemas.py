@@ -25,6 +25,8 @@ from models.tags import (
     TagsModel
 )
 
+from models.allergy import *
+
 class UserSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = UserModel
@@ -70,3 +72,8 @@ class UserFoodHistorySchema(ma.SQLAlchemyAutoSchema):
 class TagsSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = TagsModel
+
+class AllergySchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = AllergyModel
+    ingredients = ma.Nested('FoodIngredientsSchema', only=('id', 'name'), many=True)

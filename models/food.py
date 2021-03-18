@@ -225,7 +225,6 @@ class FoodModel(db.Model):
     rating = db.Column('rating', db.Integer)
     tags = db.Column('tags', db.Text)
     image_filename = db.Column('image_filename', db.Text)
-    rating = db.Column('rating', db.Float)
     nutri_point = db.Column('nutri_point', db.Float)
 
     def save_to_db(self):

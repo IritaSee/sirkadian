@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, flash, current_app
+from flask import Flask, jsonify, render_template, flash, current_app, send_from_directory
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
@@ -7,10 +7,13 @@ from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from flask_admin.contrib.sqla import ModelView
 from flask_mail import Mail
+from sqlalchemy import event
+import flask_admin as admin
 
 from db import db
 from mail import mail
 from blacklist import *
+from config import *
 
 from resources.user import *
 from resources.food import *
@@ -33,9 +36,9 @@ import logging
 
 app = Flask(__name__)
 if app.config["ENV"] == "production":
-    app.config.from_object("config.ProductionConfig")
-else:
     app.config.from_object("config.DevelopmentConfig")
+else:
+    app.config.from_object("config.ProductionConfig")
 
 ma = Marshmallow(app)
 
@@ -48,31 +51,13 @@ mail.init_app(app)
 
 from models import *
 
-import flask_admin as admin
-
-from flask_admin.contrib.sqla import ModelView
-
-
-class FoodModelAdmin(ModelView):
-    form_columns = ('name','food_type','duration','difficulty','tags',)
-    column_searchable_list = ('name',)
-    column_exclude_list = ('serving','image_filename','rating','nutri_point')
-
-    inline_models = (FoodInstructionsModel,)
-
-    create_template = 'food/admin_add_food_interface.html'
-    def __init__(self):
-        super(FoodModelAdmin, self).__init__(FoodModel, db.session, name='Food')
-
-admin = admin.Admin(app, template_mode='bootstrap3')
-admin.add_view(FoodModelAdmin())
-
 
 manager = Manager(app)
 manager.add_command('db', MigrateCommand)
 
 api = Api(app)
 jwt = JWTManager(app)
+
 
 # token related
 @jwt.token_in_blacklist_loader
@@ -141,6 +126,26 @@ def indexadmin():
 def change_password():
     return render_template('user/change_password.html')
 
+@app.route('/uploads/<path:filename>') 
+def send_file(filename): 
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@event.listens_for(FoodModel, 'after_delete')
+def del_image(mapper, connection, target):
+    if target.image_filename:
+        # Delete image
+        try:
+            os.remove(os.path.join(file_path, target.image_filename))
+        except OSError:
+            pass
+
+        # Delete thumbnail
+        try:
+            os.remove(os.path.join(file_path,
+                              form.thumbgen_filename(target.image_filename)))
+        except OSError:
+            pass
+
 api.add_resource(User, '/user/<int:user_id>')
 api.add_resource(UserRegister, '/user/register')
 api.add_resource(UserInitialSetup, '/user/initial') # post
@@ -171,7 +176,8 @@ api.add_resource(FoodRating, '/api/food/rating')
 api.add_resource(AddAddiction, '/api/addiction/add_addiction_interface')
 
 # resource related to allergy
-api.add_resource(AddAllergy, '/api/addiction/add_allergy_interface')
+api.add_resource(AddAllergy, '/api/allergy/add_allergy')
+api.add_resource(SearchAllergy, '/api/allergy/get_allergy')
 
 # resource related to disease
 api.add_resource(AddDisease, '/api/disease/add_disease_interface')
@@ -188,7 +194,17 @@ api.add_resource(Sport, '/sport/<int:sport_id>')
 api.add_resource(AddTag, '/admin_only/add_tag')
 api.add_resource(GetAllTagsAPI, '/admin_only/get_tags')
 
+api.add_resource(Testing, '/testing')
 
+from admin import (
+    AllergyModelAdmin,
+    FoodModelAdmin,
+    FoodIngredientsModelAdmin
+)
+admin = admin.Admin(app, template_mode='bootstrap3')
+admin.add_view(AllergyModelAdmin())
+admin.add_view(FoodModelAdmin())
+admin.add_view(FoodIngredientsModelAdmin())
 if __name__ == '__main__':
     manager.run()
     app.run(port=5000, debug=True)

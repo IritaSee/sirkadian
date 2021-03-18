@@ -22,6 +22,9 @@ from models.assoc import (
 from datetime import (
     date
 )
+from models.schemas import (
+    AllergySchema
+)
 import datetime
 
 class AddAllergy(Resource):
@@ -47,3 +50,19 @@ class AddAllergy(Resource):
 
         flash('Sukses tambah alergi!')
         return redirect(request.url)
+
+class SearchAllergy(Resource):
+    def get(self):
+        # ?name=....
+        name = request.args.get('name')
+
+        wildcard_name = "%{}%".format(name)
+        search = AllergyModel.query.filter(AllergyModel.name.like(wildcard_name)).all()
+        
+        if search:
+            data = AllergySchema(many=True).dump(search)
+            return jsonify(data)
+        else:
+            return jsonify({
+                'message': 'Allergy not found'
+            })
