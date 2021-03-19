@@ -57,7 +57,7 @@ from datetime import (
 )
 import datetime
 from sqlalchemy import and_
-from cdn import cdn
+from cdn import cdn, cdn_url
 
 class AddFood(Resource):
     def get(self):
@@ -431,13 +431,13 @@ class FoodRecommendation(Resource):
                     if best_lauk[idx].id == identity:
                         rekomendasi = data + (bobot_rating_lauk * number.protein)
                         rekomendasi_bersama_lauk.append(rekomendasi)
-                        result_lauk.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': number.image_filename})
+                        result_lauk.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': cdn_url('food',number.image_filename)})
             for identity, data in total_kecocokan_sayur.items():
                 for idx, number in enumerate(best_sayur):
                     if best_sayur[idx].id == identity:
                         rekomendasi = data + (bobot_rating_sayur * number.protein)
                         rekomendasi_bersama_sayur.append(rekomendasi)
-                        result_sayur.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': number.image_filename})
+                        result_sayur.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': cdn_url('food',number.image_filename)})
                         
 
             max_rekomendasi_lauk = max(rekomendasi_bersama_lauk)
@@ -492,7 +492,7 @@ class FoodRecommendation(Resource):
                         if best_lauk.items[idx].id == identity:
                             rekomendasi = data + (bobot_rating_lauk * number.protein)
                             rekomendasi_bersama_lauk.append(rekomendasi)
-                            result_lauk.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': number.image_filename})
+                            result_lauk.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': cdn_url('food',number.image_filename)})
 
                 max_rekomendasi_lauk = max(rekomendasi_bersama_lauk)
                 for data in result_lauk:
@@ -534,7 +534,7 @@ class FoodRecommendation(Resource):
                         if best_sayur.items[idx].id == identity:
                             rekomendasi = data + (bobot_rating_sayur * number.protein)
                             rekomendasi_bersama_sayur.append(rekomendasi)
-                            result_sayur.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': number.image_filename})
+                            result_sayur.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': cdn_url('food',number.image_filename)})
                               
                 max_rekomendasi_sayur = max(rekomendasi_bersama_sayur)
 
