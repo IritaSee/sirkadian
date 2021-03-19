@@ -3,7 +3,7 @@ from imagekitio import ImageKit
 def cdn_url(type,filename):
     cdn_url = 'https://ik.imagekit.io/sirkadian'
     if type == 'food':  
-        return cdn_url + '/food_image/' + filename
+        return cdn_url + '/food_image/' + str(filename)
     else: 
         return cdn_url
 

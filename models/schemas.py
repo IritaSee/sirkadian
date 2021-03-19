@@ -26,6 +26,7 @@ from models.tags import (
 )
 
 from models.allergy import *
+from cdn import cdn, cdn_url
 
 class UserSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -49,6 +50,10 @@ class FoodSchema(ma.SQLAlchemyAutoSchema):
     food_ingredients = ma.Nested('FoodIngredientsSchema', only=('id', 'name'), many=True)
     food_ingredients_info = ma.Nested('FoodIngredientsInfoSchema', many=True)
     food_instructions = ma.Nested('FoodInstructionsSchema', many=True)
+    image_filename = fields.Method('cdn')
+
+    def cdn(self,obj):
+        return cdn_url('food',obj.image_filename)
 
 class FoodHelperSchema(ma.SQLAlchemyAutoSchema):
     class Meta:

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, flash, current_app, send_from_directory
+from flask import Flask, render_template
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
@@ -95,21 +95,25 @@ def revoked_token_callback():
         'message': 'The token has been revoked',
     }, 401
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
+# from flask_sqlalchemy import get_debug_queries
+# app.config['SQLALCHEMY_RECORD_QUERIES'] = True
+# @app.after_request
+# def after_request_func(response):
+#     for query in get_debug_queries():
+#         if query.duration >= 0:
+#             print(query.statement, query.parameters, query.duration, query.context)
+#     return response
 
-@app.after_request
-def after_request_func(response):
-    if request.method == 'POST':
-        if response.status_code == 405:
-            print(response.json['message'])
-            request_data = {"url": request.environ["REQUEST_URI"], "ip": request.remote_addr}
-            FORMAT = '%(asctime)s %(message)s %(url)s %(ip)s'
-            logging.basicConfig(filename='demo.log', format=FORMAT, datefmt='%d/%m/%Y %I:%M:%S %p')
-            logging.warning("POST", extra=request_data)
-            return response
-    return response
+
+    # if request.method == 'POST':
+    #     if response.status_code == 405:
+    #         print(response.json['message'])
+    #         request_data = {"url": request.environ["REQUEST_URI"], "ip": request.remote_addr}
+    #         FORMAT = '%(asctime)s %(message)s %(url)s %(ip)s'
+    #         logging.basicConfig(filename='demo.log', format=FORMAT, datefmt='%d/%m/%Y %I:%M:%S %p')
+    #         logging.warning("POST", extra=request_data)
+    #         return response
+    # return response
 
 # resource related to general website
 @app.route('/')
@@ -125,10 +129,6 @@ def indexadmin():
 @app.route('/forgot_password', methods = ['GET'], endpoint='change_password')
 def change_password():
     return render_template('user/change_password.html')
-
-@app.route('/uploads/<path:filename>') 
-def send_file(filename): 
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @event.listens_for(FoodModel, 'after_delete')
 def del_image(mapper, connection, target):
@@ -188,8 +188,6 @@ api.add_resource(Sport, '/sport/<int:sport_id>')
 api.add_resource(AddTag, '/admin_only/add_tag')
 api.add_resource(GetAllTagsAPI, '/admin_only/get_tags')
 
-api.add_resource(Testing, '/testing')
-
 from admin import (
     AllergyModelAdmin,
     FoodModelAdmin,
@@ -199,6 +197,7 @@ admin = admin.Admin(app, template_mode='bootstrap3')
 admin.add_view(AllergyModelAdmin())
 admin.add_view(FoodModelAdmin())
 admin.add_view(FoodIngredientsModelAdmin())
+
 if __name__ == '__main__':
     manager.run()
-    app.run(port=5000, debug=True,threaded=True)
+    app.run(host='127.0.0.1', port=5000, debug=True, threaded=True)

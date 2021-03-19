@@ -57,7 +57,7 @@ from datetime import (
 )
 import datetime
 from sqlalchemy import and_
-from cdn import cdn, cdn_url
+from cdn import cdn
 
 class AddFood(Resource):
     def get(self):
@@ -335,56 +335,6 @@ class FoodTrending(Resource):
         else:
             return jsonify({'message': 'Enter valid option'})
 
-class Testing(Resource):
-    @classmethod
-    def get(self):
-        _id = request.args.get('id')
-        option = request.args.get('option')
-        page = request.args.get('page', 1, int)
-        food_type = request.args.get('type')
-
-        rs = db.session.execute('SELECT ingredients_id FROM allergy_ingredients_assoc WHERE allergy_id = (SELECT allergy.id FROM allergy INNER JOIN allergy_history_assoc ON allergy.id = allergy_history_assoc.allergy_id AND allergy_history_assoc.id = %s)'%_id)
-        ingredients = []
-        for item in rs:
-            ingredients.append(item[0])
-
-        print(ingredients)
-        
-        necessity = UserNecessityModel.query.filter_by(user_id=_id).order_by(UserNecessityModel.id.desc()).first()
-        pokok = FoodModel.query.filter_by(name='Nasi Putih').first()
-
-
-    
-        subquery1 = db.session.query(AllergyModel.id).join(allergy_history_assoc, and_(allergy_history_assoc.c.id == _id)).subquery()
-        
-        subquery2 = db.session.query(allergy_ingredients_assoc.c.ingredients_id).filter(allergy_ingredients_assoc.c.allergy_id.in_(subquery1)).subquery()
-
-        subquery3 = db.session.query(food_ingredients_assoc.c.food_id).filter(food_ingredients_assoc.c.ingredients_id.notin_(subquery2)).subquery()
-        
-        coba_coba = FoodModel.query.filter(FoodModel.id.in_(subquery3)).filter(and_(
-                # FoodModel.calorie/FoodModel.serving <= necessity.calorie,
-                # FoodModel.protein/FoodModel.serving <= necessity.protein,
-                # FoodModel.fat/FoodModel.serving <= necessity.fat,
-                # FoodModel.carbohydrate/FoodModel.serving <= necessity.carbohydrate,
-                # FoodModel.fiber/FoodModel.serving <= necessity.fiber,
-                # FoodModel.calcium/FoodModel.serving <= necessity.calcium,
-                # FoodModel.phosphor/FoodModel.serving <= necessity.phosphor,
-                # FoodModel.iron/FoodModel.serving <= necessity.iron,
-                # FoodModel.sodium/FoodModel.serving <= necessity.sodium,
-                # FoodModel.potassium/FoodModel.serving <= necessity.potassium,
-                # FoodModel.copper/FoodModel.serving <= necessity.copper,
-                # FoodModel.zinc/FoodModel.serving <= necessity.zinc,
-                FoodModel.vit_a/FoodModel.serving <= necessity.vit_a,
-                FoodModel.vit_b1/FoodModel.serving <= necessity.vit_b1,
-                FoodModel.vit_b2/FoodModel.serving <= necessity.vit_b2,
-                FoodModel.vit_b3/FoodModel.serving <= necessity.vit_b3,
-                FoodModel.vit_c/FoodModel.serving <= necessity.vit_c)).filter(FoodModel.food_type.like('lauk')).order_by(FoodModel.nutri_point.desc()).limit(20).all()
-        
-            
-
-        # baru_baru = coba_coba.query.filter(FoodModel.food_ingredients[0].id.notin_(ingredients[0]))
-        # print(FoodModel.find_by_id(1).food_ingredients.id)
-        print(coba_coba)
 
 class FoodRecommendation(Resource):
     @classmethod
@@ -397,62 +347,58 @@ class FoodRecommendation(Resource):
         option = request.args.get('option')
         page = request.args.get('page', 1, int)
         food_type = request.args.get('type')
+
+        list_nutrisi=['vit_a','vit_b1','vit_c']
+
+        necessity = UserNecessityModel.query.filter_by(user_id=_id).first()
+
+        # User allergy name
+        subquery1 = db.session.query(allergy_history_assoc.c.allergy_id).join(UserAllergyHistoryModel).filter(and_(UserAllergyHistoryModel.id == allergy_history_assoc.c.history_id, UserAllergyHistoryModel.user_id == _id)).subquery()
+
+        # Allergen ingredients
+        subquery2 = db.session.query(allergy_ingredients_assoc.c.ingredients_id).filter(allergy_ingredients_assoc.c.allergy_id.in_(subquery1)).subquery()
+
+        # Foods that contain allergen ingredients
+        subquery3 = db.session.query(food_ingredients_assoc.c.food_id).filter(food_ingredients_assoc.c.ingredients_id.in_(subquery2)).subquery()
+
+        # Foods that do not exceed daily intake limit
+        food = FoodModel.query.filter(FoodModel.id.notin_(subquery3)).filter(and_(
+                FoodModel.calorie/FoodModel.serving <= necessity.calorie,
+                FoodModel.protein/FoodModel.serving <= necessity.protein,
+                FoodModel.fat/FoodModel.serving <= necessity.fat,
+                FoodModel.carbohydrate/FoodModel.serving <= necessity.carbohydrate,
+                FoodModel.fiber/FoodModel.serving <= necessity.fiber,
+                FoodModel.calcium/FoodModel.serving <= necessity.calcium,
+                FoodModel.phosphor/FoodModel.serving <= necessity.phosphor,
+                FoodModel.iron/FoodModel.serving <= necessity.iron,
+                FoodModel.sodium/FoodModel.serving <= necessity.sodium,
+                FoodModel.potassium/FoodModel.serving <= necessity.potassium,
+                FoodModel.copper/FoodModel.serving <= necessity.copper,
+                FoodModel.zinc/FoodModel.serving <= necessity.zinc,
+                FoodModel.vit_a/FoodModel.serving <= necessity.vit_a,
+                FoodModel.vit_b1/FoodModel.serving <= necessity.vit_b1,
+                FoodModel.vit_b2/FoodModel.serving <= necessity.vit_b2,
+                FoodModel.vit_b3/FoodModel.serving <= necessity.vit_b3,
+                FoodModel.vit_c/FoodModel.serving <= necessity.vit_c))
+
         if option == '1':
-            necessity = UserNecessityModel.query.filter_by(user_id=_id).order_by(UserNecessityModel.id.desc()).first()
             pokok = FoodModel.query.filter_by(name='Nasi Putih').first()
-            best_lauk = FoodModel.query.filter(and_(
-                # FoodModel.calorie/FoodModel.serving <= necessity.calorie,
-                # FoodModel.protein/FoodModel.serving <= necessity.protein,
-                # FoodModel.fat/FoodModel.serving <= necessity.fat,
-                # FoodModel.carbohydrate/FoodModel.serving <= necessity.carbohydrate,
-                # FoodModel.fiber/FoodModel.serving <= necessity.fiber,
-                # FoodModel.calcium/FoodModel.serving <= necessity.calcium,
-                # FoodModel.phosphor/FoodModel.serving <= necessity.phosphor,
-                # FoodModel.iron/FoodModel.serving <= necessity.iron,
-                # FoodModel.sodium/FoodModel.serving <= necessity.sodium,
-                # FoodModel.potassium/FoodModel.serving <= necessity.potassium,
-                # FoodModel.copper/FoodModel.serving <= necessity.copper,
-                # FoodModel.zinc/FoodModel.serving <= necessity.zinc,
-                FoodModel.vit_a/FoodModel.serving <= necessity.vit_a,
-                FoodModel.vit_b1/FoodModel.serving <= necessity.vit_b1,
-                FoodModel.vit_b2/FoodModel.serving <= necessity.vit_b2,
-                FoodModel.vit_b3/FoodModel.serving <= necessity.vit_b3,
-                FoodModel.vit_c/FoodModel.serving <= necessity.vit_c)).filter(FoodModel.food_type.like('lauk')).order_by(FoodModel.nutri_point.desc()).limit(20)
-            best_sayur = FoodModel.query.filter(and_(
-                # FoodModel.calorie/FoodModel.serving <= necessity.calorie,
-                # FoodModel.protein/FoodModel.serving <= necessity.protein,
-                # FoodModel.fat/FoodModel.serving <= necessity.fat,
-                # FoodModel.carbohydrate/FoodModel.serving <= necessity.carbohydrate,
-                # FoodModel.fiber/FoodModel.serving <= necessity.fiber,
-                # FoodModel.calcium/FoodModel.serving <= necessity.calcium,
-                # FoodModel.phosphor/FoodModel.serving <= necessity.phosphor,
-                # FoodModel.iron/FoodModel.serving <= necessity.iron,
-                # FoodModel.sodium/FoodModel.serving <= necessity.sodium,
-                # FoodModel.potassium/FoodModel.serving <= necessity.potassium,
-                # FoodModel.copper/FoodModel.serving <= necessity.copper,
-                # FoodModel.zinc/FoodModel.serving <= necessity.zinc,
-                FoodModel.vit_a/FoodModel.serving <= necessity.vit_a,
-                FoodModel.vit_b1/FoodModel.serving <= necessity.vit_b1,
-                FoodModel.vit_b2/FoodModel.serving <= necessity.vit_b2,
-                FoodModel.vit_b3/FoodModel.serving <= necessity.vit_b3,
-                FoodModel.vit_c/FoodModel.serving <= necessity.vit_c)).filter(FoodModel.food_type.like('sayur')).order_by(FoodModel.nutri_point.desc()).limit(20)
+            best_lauk = food.filter(FoodModel.food_type.like('lauk')).order_by(FoodModel.nutri_point.desc()).limit(20).all()
+            best_sayur = food.filter(FoodModel.food_type.like('sayur')).order_by(FoodModel.nutri_point.desc()).limit(20).all()
 
             kecocokan_lauk = {}
             kecocokan_sayur = {}
 
-            list_nama=['vit_a','vit_b1','vit_c']
-
             for idx, number in enumerate(best_lauk):
                 kecocokan_lauk[best_lauk[idx].id] = {}
-                for value in list_nama:
+                for value in list_nutrisi:
                     try:
                         kecocokan_lauk[best_lauk[idx].id][value] = getattr(best_lauk[idx],value)/getattr(necessity,value)
                     except:
                         kecocokan_lauk[best_lauk[idx].id][value] = getattr(best_lauk[idx],value)
-
             for idx, number in enumerate(best_sayur):
                 kecocokan_sayur[best_sayur[idx].id] = {}
-                for value in list_nama:
+                for value in list_nutrisi:
                     try:
                         kecocokan_sayur[best_sayur[idx].id][value] = getattr(best_sayur[idx],value)/getattr(necessity,value)
                     except:
@@ -463,14 +409,11 @@ class FoodRecommendation(Resource):
 
             for key, data in kecocokan_lauk.items():
                 total_kecocokan_lauk[key] = sum(data.values())
-
             for key, data in kecocokan_sayur.items():
                 total_kecocokan_sayur[key] = sum(data.values())
 
             bobot_rating_lauk = max(total_kecocokan_lauk.values()) - min(total_kecocokan_lauk.values()) / 2.5
             bobot_rating_sayur = max(total_kecocokan_sayur.values()) - min(total_kecocokan_sayur.values()) / 2.5
-
-            
 
             result_lauk = []
             result_sayur = []
@@ -489,7 +432,6 @@ class FoodRecommendation(Resource):
                         rekomendasi = data + (bobot_rating_lauk * number.protein)
                         rekomendasi_bersama_lauk.append(rekomendasi)
                         result_lauk.append({'id': identity, 'name': number.name, 'rekomendasi': rekomendasi, 'image_filename': number.image_filename})
-
             for identity, data in total_kecocokan_sayur.items():
                 for idx, number in enumerate(best_sayur):
                     if best_sayur[idx].id == identity:
@@ -505,47 +447,26 @@ class FoodRecommendation(Resource):
             for data in result_lauk:
                 for key, value in data.items():
                     if key == 'rekomendasi':
-                        # data[key] = data[key]/max_rekomendasi_lauk*10
-                        data[key] = data[key]
-
+                        data[key] = data[key]/max_rekomendasi_lauk*10
             for data in result_sayur:
                 for key, value in data.items():
                     if key == 'rekomendasi':
-                        # data[key] = data[key]/max_rekomendasi_sayur*10
-                        data[key] = data[key]
+                        data[key] = data[key]/max_rekomendasi_sayur*10
 
             return jsonify({'lauk':result_lauk},{'sayur':result_sayur})
 
         elif option == '2':
-            list_nama=['vit_a','vit_b1','vit_c']
-            necessity = UserNecessityModel.query.filter_by(user_id=_id).order_by(UserNecessityModel.id.desc()).first()
+            max_per_page = 2
             if food_type == '1': # pokok
                 pokok = FoodModel.query.filter_by(name='Nasi Putih').first()
             elif food_type == '2': # lauk
-                best_lauk = FoodModel.query.filter(and_(
-                    # FoodModel.calorie <= necessity.calorie,
-                    # FoodModel.protein <= necessity.protein,
-                    # FoodModel.fat <= necessity.fat,
-                    # FoodModel.carbohydrate <= necessity.carbohydrate,
-                    # FoodModel.fiber <= necessity.fiber,
-                    # FoodModel.calcium <= necessity.calcium,
-                    # FoodModel.phosphor <= necessity.phosphor,
-                    # FoodModel.iron <= necessity.iron,
-                    # FoodModel.sodium <= necessity.sodium,
-                    # FoodModel.potassium <= necessity.potassium,
-                    # FoodModel.copper <= necessity.copper,
-                    # FoodModel.zinc <= necessity.zinc,
-                    FoodModel.vit_a <= necessity.vit_a,
-                    FoodModel.vit_b1 <= necessity.vit_b1,
-                    FoodModel.vit_b2 <= necessity.vit_b2,
-                    FoodModel.vit_b3 <= necessity.vit_b3,
-                    FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).paginate(page=page, error_out=True, max_per_page=10)
+                best_lauk = food.filter(FoodModel.food_type.like('lauk')).order_by(FoodModel.nutri_point.desc()).paginate(page=page, error_out=True, max_per_page=max_per_page)
         
                 kecocokan_lauk = {}
                 
                 for idx, number in enumerate(best_lauk.items):
                     kecocokan_lauk[best_lauk.items[idx].id] = {}
-                for value in list_nama:
+                for value in list_nutrisi:
                     try:
                         kecocokan_lauk[best_lauk.items[idx].id][value] = getattr(best_lauk.items[idx],value)/getattr(necessity,value)
                     except:
@@ -577,35 +498,17 @@ class FoodRecommendation(Resource):
                 for data in result_lauk:
                     for key, value in data.items():
                         if key == 'rekomendasi':
-                            # data[key] = data[key]/max_rekomendasi_lauk*10
-                            data[key] = data[key]
+                            data[key] = data[key]/max_rekomendasi_lauk*10
                             return jsonify({'lauk':result_lauk})
 
             elif food_type == '3': # sayur
-                best_sayur = FoodModel.query.filter(and_(
-                    # FoodModel.calorie <= necessity.calorie,
-                    # FoodModel.protein <= necessity.protein,
-                    # FoodModel.fat <= necessity.fat,
-                    # FoodModel.carbohydrate <= necessity.carbohydrate,
-                    # FoodModel.fiber <= necessity.fiber,
-                    # FoodModel.calcium <= necessity.calcium,
-                    # FoodModel.phosphor <= necessity.phosphor,
-                    # FoodModel.iron <= necessity.iron,
-                    # FoodModel.sodium <= necessity.sodium,
-                    # FoodModel.potassium <= necessity.potassium,
-                    # FoodModel.copper <= necessity.copper,
-                    # FoodModel.zinc <= necessity.zinc,
-                    FoodModel.vit_a <= necessity.vit_a,
-                    FoodModel.vit_b1 <= necessity.vit_b1,
-                    FoodModel.vit_b2 <= necessity.vit_b2,
-                    FoodModel.vit_b3 <= necessity.vit_b3,
-                    FoodModel.vit_c <= necessity.vit_c)).filter(FoodModel.food_type.like('pokok')).order_by(FoodModel.nutri_point.desc()).paginate(page=page, error_out=True, max_per_page=10)
+                best_sayur = food.filter(FoodModel.food_type.like('sayur')).order_by(FoodModel.nutri_point.desc()).paginate(page=page, error_out=True, max_per_page=max_per_page)
 
                 kecocokan_sayur = {}
                 
                 for idx, number in enumerate(best_sayur.items):
                     kecocokan_sayur[best_sayur.items[idx].id] = {}
-                    for value in list_nama:
+                    for value in list_nutrisi:
                         try:
                             kecocokan_sayur[best_sayur.items[idx].id][value] = getattr(best_sayur.items[idx],value)/getattr(necessity,value)
                         except:
@@ -638,8 +541,7 @@ class FoodRecommendation(Resource):
                 for data in result_sayur:
                     for key, value in data.items():
                         if key == 'rekomendasi':
-                            # data[key] = data[key]/max_rekomendasi_sayur*10
-                            data[key] = data[key]
+                            data[key] = data[key]/max_rekomendasi_sayur*10
 
                 return jsonify({'sayur':result_sayur})
             else:
@@ -1072,28 +974,49 @@ class FoodNecessity(Resource):
                 target_vit_b3 = 14
                 target_vit_c = 75
 
-        db.session.add(UserNecessityModel(
-            user_id = user_data.id,
-            calorie = round(target_calorie, 1),
-            protein = round(target_protein, 1),
-            fat = round(target_fat, 1),
-            carbohydrate = round(target_carbohydrate, 1),
-            fiber = round(target_fiber, 1),
-            calcium = round(target_calcium, 1),
-            phosphor = round(target_phosphor, 1),
-            iron = round(target_iron, 1),
-            sodium = round(target_sodium, 1),
-            potassium = round(target_potassium, 1),
-            copper = round(target_copper, 1),
-            zinc = round(target_zinc, 1),
-            vit_a = round(target_vit_a, 1),
-            vit_b1 = round(target_vit_b1, 1),
-            vit_b2 = round(target_vit_b2, 1),
-            vit_b3 = round(target_vit_b3, 1),
-            vit_c = round(target_vit_c, 1),
-            ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-        ))
+        exists_data = UserNecessityModel.query.filter_by(user_id=user_data.id).first()
 
+        if not exists_data :
+            db.session.add(UserNecessityModel(
+                user_id = user_data.id,
+                calorie = round(target_calorie, 1),
+                protein = round(target_protein, 1),
+                fat = round(target_fat, 1),
+                carbohydrate = round(target_carbohydrate, 1),
+                fiber = round(target_fiber, 1),
+                calcium = round(target_calcium, 1),
+                phosphor = round(target_phosphor, 1),
+                iron = round(target_iron, 1),
+                sodium = round(target_sodium, 1),
+                potassium = round(target_potassium, 1),
+                copper = round(target_copper, 1),
+                zinc = round(target_zinc, 1),
+                vit_a = round(target_vit_a, 1),
+                vit_b1 = round(target_vit_b1, 1),
+                vit_b2 = round(target_vit_b2, 1),
+                vit_b3 = round(target_vit_b3, 1),
+                vit_c = round(target_vit_c, 1),
+                ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+            ))
+        else:
+            exists_data.calorie = round(target_calorie, 1),
+            exists_data.protein = round(target_protein, 1),
+            exists_data.fat = round(target_fat, 1),
+            exists_data.carbohydrate = round(target_carbohydrate, 1),
+            exists_data.fiber = round(target_fiber, 1),
+            exists_data.calcium = round(target_calcium, 1),
+            exists_data.phosphor = round(target_phosphor, 1),
+            exists_data.iron = round(target_iron, 1),
+            exists_data.sodium = round(target_sodium, 1),
+            exists_data.potassium = round(target_potassium, 1),
+            exists_data.copper = round(target_copper, 1),
+            exists_data.zinc = round(target_zinc, 1),
+            exists_data.vit_a = round(target_vit_a, 1),
+            exists_data.vit_b1 = round(target_vit_b1, 1),
+            exists_data.vit_b2 = round(target_vit_b2, 1),
+            exists_data.vit_b3 = round(target_vit_b3, 1),
+            exists_data.vit_c = round(target_vit_c, 1),
+            exists_data.ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
         try:
             db.session.commit()
         except:
@@ -1134,13 +1057,11 @@ class FoodDetail(Resource):
             _id = request.args.get('id')
             food_detail = FoodModel.find_by_id(_id)
             data = FoodSchema().dump(food_detail)
-            data['image_filename'] = cdn_url('food',data['image_filename'])
             return jsonify(data)
         elif option == '2':
             _id = request.args.get('id')
             food_half_detail = FoodModel.query.filter_by(id=_id).with_entities(FoodModel.name, FoodModel.duration, FoodModel.calorie, FoodModel.food_type).first()
             data = FoodSchema().dump(food_half_detail)
-            data['image_filename'] = cdn_url('food',data['image_filename'])
             return jsonify(data)
 
 class FoodNutrition(Resource):

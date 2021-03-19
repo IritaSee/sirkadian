@@ -92,8 +92,7 @@ class UserVerificationModel(db.Model):
 class UserNecessityModel(db.Model):
     __tablename__ = 'user_necessity'
     
-    id = db.Column('id', db.Integer, primary_key=True)
-    user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True, nullable=False)
     calorie = db.Column('calorie', db.Float, nullable=False)
     protein = db.Column('protein', db.Float, nullable=False)
     fat = db.Column('fat', db.Float, nullable=False)
