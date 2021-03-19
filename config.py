@@ -30,10 +30,10 @@ class ProductionConfig(Config):
     pass
 
 class DevelopmentConfig(Config):
-    # DEBUG = True
+    DEBUG = True
     
-    # SESSION_COOKIE_SECURE = False
-    pass
+    SESSION_COOKIE_SECURE = False
+    # pass
 
 class TestingConfig(Config):
     TESTING = True

@@ -57,6 +57,7 @@ from datetime import (
 )
 import datetime
 from sqlalchemy import and_
+from cdn import cdn, cdn_url
 
 class AddFood(Resource):
     def get(self):
@@ -79,15 +80,25 @@ class AddFood(Resource):
         if 'food_image' not in request.files:
             flash('No file part')
             return redirect(request.url)
-        file = request.files['food_image']
+        image = request.files['food_image']
 
-        if file.filename == '':
+        if image.filename == '':
             flash('No selected file')
             return redirect(request.url)
 
-        if file:
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], "food_image", filename))
+        if image:
+            filename = secure_filename(food_name)
+            upload = cdn.upload_file(
+                file= image, # required
+                file_name= filename, # required
+                options= {
+                    "folder" : "/food_image/",
+                    "is_private_file": False,
+                    "use_unique_file_name": True,
+                    "response_fields": ["file_name"],
+                }
+            )
+            filename = upload['response']['name']
 
         # Declare variable
         namabahan = []
@@ -1123,12 +1134,13 @@ class FoodDetail(Resource):
             _id = request.args.get('id')
             food_detail = FoodModel.find_by_id(_id)
             data = FoodSchema().dump(food_detail)
-            print(food_detail.rating)
+            data['image_filename'] = cdn_url('food',data['image_filename'])
             return jsonify(data)
         elif option == '2':
             _id = request.args.get('id')
             food_half_detail = FoodModel.query.filter_by(id=_id).with_entities(FoodModel.name, FoodModel.duration, FoodModel.calorie, FoodModel.food_type).first()
             data = FoodSchema().dump(food_half_detail)
+            data['image_filename'] = cdn_url('food',data['image_filename'])
             return jsonify(data)
 
 class FoodNutrition(Resource):

@@ -133,17 +133,11 @@ def send_file(filename):
 @event.listens_for(FoodModel, 'after_delete')
 def del_image(mapper, connection, target):
     if target.image_filename:
-        # Delete image
-        try:
-            os.remove(os.path.join(file_path, target.image_filename))
-        except OSError:
-            pass
-
-        # Delete thumbnail
-        try:
-            os.remove(os.path.join(file_path,
-                              form.thumbgen_filename(target.image_filename)))
-        except OSError:
+        list_files = cdn.list_files({"name": target.image_filename})
+        try : 
+            fileId = list_files['response'][0]['fileId']
+            cdn.delete_file(fileId)
+        except Exception as e:
             pass
 
 api.add_resource(User, '/user/<int:user_id>')
@@ -207,4 +201,4 @@ admin.add_view(FoodModelAdmin())
 admin.add_view(FoodIngredientsModelAdmin())
 if __name__ == '__main__':
     manager.run()
-    app.run(port=5000, debug=True)
+    app.run(port=5000, debug=True,threaded=True)
