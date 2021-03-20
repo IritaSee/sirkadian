@@ -1,4 +1,5 @@
 from db import db
+from cdn import cdn_url
 from models.assoc import (
     food_ingredients_assoc,
     food_ingredients_info_assoc,
@@ -226,6 +227,9 @@ class FoodModel(db.Model):
     tags = db.Column('tags', db.Text)
     image_filename = db.Column('image_filename', db.Text)
     nutri_point = db.Column('nutri_point', db.Float)
+
+    def image_url(self):
+        return cdn_url('food',self.image_filename)
 
     def save_to_db(self):
         db.session.add(self)

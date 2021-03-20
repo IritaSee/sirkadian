@@ -81,12 +81,13 @@ class UserRegister(Resource):
         except:
             return {"message": "Error database step 1!"}
 
+        user_id = UserModel.query.filter_by(username=data['username']).with_entities(UserModel.id).first()
         key = None
         key = str(randint(100000, 999999))
         code = generate_password_hash(key, 'sha256')
         try:
             data_to_input_verification = UserVerificationModel(
-                user_id = UserModel.query.filter_by(username=data['username']).with_entities(UserModel.id).first(),
+                user_id = user_id,
                 code = code,
                 purpose = 'register',
                 ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
@@ -95,15 +96,13 @@ class UserRegister(Resource):
         except:
             return {"message": "Error database step 2!"}
         
-        msg = Message('Verifikasi akun Sirkadianmu', sender = 'sirkadiancorporation@gmail.com', recipients = [data['email']])
+        msg = Message('Verifikasi akun Sirkadianmu', sender = 'sirkadiancorporation@gmail.com', recipients = data['email'].split())
         msg.html = "<h3>Verifikasi akun Sirkadianmu</h3><br><p>Masukkan kode ini " + str(key) + " di aplikasi Sirkadian untuk mengaktifkan akun Anda.</p><br><p>Abaikan pesan ini jika tidak merasa mendaftar</p><br></p>Terima kasih</p><br><p>Regards, Sirkadian</p>"
         mail.send(msg)
 
         return {
             "message": "Success!",
-            "username": data['username'],
-            "verification_code": key,
-            "activated": 0
+            "id": user_id.id,
         }, 201
 
 class UserInitialSetup(Resource):
@@ -117,47 +116,85 @@ class UserInitialSetup(Resource):
             if user.activated == True:
                 d, m, y = data['dob'].split('-') # dd-mm-yyyy
                 user.dob = datetime.datetime(int(y), int(m), int(d))
-                
-                data_to_input_health = UserHealthHistoryModel(
-                    user_id = user.id,
-                    height = data['height'],
-                    weight = data['weight'],
-                    activity_level = data['activity_level'],
-                    sport_difficulty = data['sport_difficulty'],
-                    vegan = data['vegan'],
-                    ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr),
-                    maintain_weight = data['maintain_weight']
-                )
-                
+
+                exists_health_history = UserHealthHistoryModel.query.filter_by(user_id=user.id).first()
+                if not exists_health_history :
+                    data_to_input_health = UserHealthHistoryModel(
+                        user_id = user.id,
+                        height = data['height'],
+                        weight = data['weight'],
+                        activity_level = data['activity_level'],
+                        sport_difficulty = data['sport_difficulty'],
+                        vegan = data['vegan'],
+                        ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr),
+                        maintain_weight = data['maintain_weight']
+                    )
+                    db.session.add(data_to_input_health)
+                else :
+                    exists_health_history.height = data['height']
+                    exists_health_history.weight = data['weight']
+                    exists_health_history.activity_level = data['activity_level']
+                    exists_health_history.sport_difficulty = data['sport_difficulty']
+                    exists_health_history.vegan = data['vegan']
+                    exists_health_history.ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                    exists_health_history.maintain_weight = data['maintain_weight']
+
                 allergy_dict = data['allergy']
-                data_to_input_allergy = UserAllergyHistoryModel(
-                    user_id = user.id,
-                    ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-                )
-                for item in allergy_dict:
-                    data_to_input_allergy.allergy.append(AllergyModel.find_by_id(item))
+                exists_allergy_history = UserAllergyHistoryModel.query.filter_by(user_id=user.id).first()
+                if not exists_allergy_history :
+                    data_to_input_allergy = UserAllergyHistoryModel(
+                        user_id = user.id,
+                        ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                    )
+                    for item in allergy_dict:
+                        data_to_input_allergy.allergy.append(AllergyModel.find_by_id(item))
+                    db.session.add(data_to_input_allergy)
+                else :
+                    exists_allergy_history.ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                    exists_allergy_history.allergy = []
+                    for item in allergy_dict:
+                        exists_allergy_history.allergy.append(AllergyModel.find_by_id(item))
                 
                 disease_dict = data['disease']
-                data_to_input_disease = UserDiseaseHistoryModel(
-                    user_id = user.id,
-                    ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-                )
-                for item in disease_dict:
-                    data_to_input_disease.disease.append(DiseaseModel.find_by_id(item))
+                exists_disease_history = UserDiseaseHistoryModel.query.filter_by(user_id=user.id).first()
+                if not exists_disease_history :
+                    data_to_input_disease = UserDiseaseHistoryModel(
+                        user_id = user.id,
+                        ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                    )
+                    for item in disease_dict:
+                        data_to_input_disease.disease.append(DiseaseModel.find_by_id(item))
+                    db.session.add(data_to_input_disease)
+                else :
+                    exists_disease_history.ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                    exists_disease_history.disease = []
+                    for item in disease_dict:
+                        exists_disease_history.disease.append(DiseaseModel.find_by_id(item))
 
                 addiction_dict = data['addiction']
-                data_to_input_addiction = UserAddictionHistoryModel(
-                    user_id = user.id,
-                    ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-                )
-                for item in addiction_dict:
-                    data_to_input_addiction.addiction.append(AddictionModel.find_by_id(item))
+                exists_addiction_history = UserAddictionHistoryModel.query.filter_by(user_id=user.id).first()
+                if not exists_addiction_history :
+                    data_to_input_addiction = UserAddictionHistoryModel(
+                        user_id = user.id,
+                        ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                    )
+                    for item in addiction_dict:
+                        data_to_input_addiction.addiction.append(AddictionModel.find_by_id(item))
+                    db.session.add(data_to_input_addiction)
+                else :
+                    exists_addiction_history.ip_address = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                    exists_addiction_history.addiction = []
+                    for item in addiction_dict:
+                        exists_addiction_history.addiction.append(AddictionModel.find_by_id(item))
 
-                user.commit_to_db()
-                data_to_input_health.save_to_db()
-                data_to_input_allergy.save_to_db()
-                data_to_input_disease.save_to_db()
-                data_to_input_addiction.save_to_db()
+                
+                try :
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+                    return {
+                        'message': 'Database Error'
+                    }
 
                 return {
                     'message': 'Success, welcome to app!'
@@ -176,6 +213,34 @@ class UserInitialSetup(Resource):
                 'message': 'Server error'
             }
 
+def GenerateToken(id):
+    access_token = create_access_token(identity=id, fresh=True)
+    refresh_token = create_refresh_token(identity=id)
+    decoded_access_token = decode_token(access_token)
+    decoded_refresh_token = decode_token(refresh_token)
+    expires = _epoch_utc_to_datetime(decoded_refresh_token['exp'])
+    history_to_input = UserLoginHistoryModel(
+        user_id = id,
+        jti_access = decoded_access_token['jti'],
+        jti_refresh = decoded_refresh_token['jti'],
+        revoked = False,
+        expires = expires,
+        ip_address=request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+    )
+    db.session.add(history_to_input)
+
+    try :
+        db.session.commit()
+    except :
+        return {'message': 'Database Error'}, 500
+        
+    return {
+        'message': 'Success',
+        'user_id': id,
+        'access_token': access_token,
+        'refresh_token': refresh_token
+    }, 200
+
 class UserActivation(Resource):
     @classmethod
     def post(cls):
@@ -188,16 +253,13 @@ class UserActivation(Resource):
             if check_password_hash(verification.code, code) == True:
                 user = UserModel.find_by_id(_id)
                 user.activated = 1
-                user.commit_to_db()
                 verification.used = True
                 db.session.commit()
-                return {
-                    'message': 'Success! Now you may login.'
-                }
-            elif check_password_hash(key, code) == False:
-                return {
-                    'message': 'Wrong verification code!'
-                }
+                
+                # Auto Login
+                return GenerateToken(user.id)
+            else :
+                return {'message': 'Wrong verification code!'}
         elif not verification.used == False:
             return {
                 'message': 'Verification code already used'
@@ -216,30 +278,8 @@ class UserLogin(Resource):
     def post(cls):
         data = request.get_json(force=True)
         user = UserModel.find_by_username(data['username'])
-        # if user.activated == False return message error
         if user and check_password_hash(user.password, data['password']) and user.activated == 1:
-            access_token = create_access_token(identity=user.id, fresh=True)
-            refresh_token = create_refresh_token(identity=user.id)
-            decoded_access_token = decode_token(access_token)
-            decoded_refresh_token = decode_token(refresh_token)
-            expires = _epoch_utc_to_datetime(decoded_refresh_token['exp'])
-            history_to_input = UserLoginHistoryModel(
-                user_id=user.id,
-                jti_access = decoded_access_token['jti'],
-                jti_refresh = decoded_refresh_token['jti'],
-                revoked = False,
-                expires = expires,
-                ip_address=request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-            )
-            history_to_input.save_to_db()
-            return {
-                'message': 'Success',
-                'user_id': user.id,
-                'username': data['username'],
-                'email': user.email,
-                'access_token': access_token,
-                'refresh_token': refresh_token
-            }, 200
+            return GenerateToken(user.id)
         return {'message': 'Invalid credentials'}, 401
 
 class UserLogout(Resource):
